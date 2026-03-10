@@ -10,7 +10,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 model = Qwen3TTSModel.from_pretrained(
     "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice",
-    device_map="auto",
+    device_map="cpu",
     dtype=torch.float32
 )
 
