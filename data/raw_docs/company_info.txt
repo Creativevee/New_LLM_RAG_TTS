@@ -1,0 +1,3 @@
+Hexagon Labs is a Dublin based software company focused on building web applications, enterprise systems, and AI driven solutions.
+The company helps clients launch products faster through full stack development, cloud infrastructure, DevOps, and intelligent automation.
+Hexagon Labs also integrates LLM based features such as assistants, chatbots, and data insight tools to support business growth and efficiency.
