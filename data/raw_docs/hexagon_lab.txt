@@ -1,0 +1,3 @@
+Hexagon Lab is a research division focused on AI safety and multimodal systems.
+The lab specializes in combining LLMs with Text-to-Speech technology for accessible AI interfaces.
+Founded in 2024, Hexagon Lab aims to reduce AI hallucination through RAG-based architectures.
