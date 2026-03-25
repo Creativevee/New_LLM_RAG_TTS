@@ -1,26 +1,5 @@
-# Web Framework
 fastapi==0.104.1
 uvicorn==0.24.0
-pydantic==2.5.0
-
-# Environment Variables
 python-dotenv==1.0.0
-
-# HTTP Utilities (kept for compatibility)
 requests==2.31.0
-
-# Groq LLM Integration
-groq>=0.4.0
-
-# RAG & Vector Database (Required for rag.py)
-chromadb>=0.4.22
-
-# AI & TTS Models (Required for tts.py and Qwen)
-torch>=2.1.0
-transformers>=4.35.0
-accelerate>=0.24.0
-scipy>=1.11.0
-numpy>=1.24.0
-
-# Optional: If you have a specific qwen-tts package installed locally
-# qwen-tts 
+pydantic==2.5.0

@@ -1,23 +1,5 @@
-# Virtual environments
 venv/
-qwen_tts_env/
-
-# Environment variables
-.env
-
-# Generated files
-outputs/
-data/chroma_db/
-
-# Python
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-
-# Jupyter
+.env
 .ipynb_checkpoints/
-
-# OS
-.DS_Store
-Thumbs.db
