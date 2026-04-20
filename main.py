@@ -72,7 +72,7 @@ async def chat(question: str = Form(...)):
 # Health check
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "done"}
 
 
 if __name__ == "__main__":
