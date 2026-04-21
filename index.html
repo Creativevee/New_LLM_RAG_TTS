@@ -292,7 +292,9 @@
 
         <!-- HEADER -->
         <div class="header">
-            <div class="header-avatar">🤖</div>
+            <div class="header-avatar">
+            <img src="images/GVS.png" alt="Bot Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+            </div>
             <div class="header-info">
                 <h1>Hexagon Labs Chatbot</h1>
                 <span>Online</span>
@@ -313,7 +315,9 @@
         <!-- CHAT -->
         <div class="chat-box" id="chatBox">
             <div class="msg-row">
-                <div class="avatar bot">🤖</div>
+                <div class="avatar bot">
+                <img src="images/GVS.png" alt="Bot" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                </div>
                 <div class="bubble bot">Hello! I'm your AI assistant. You can upload a document and ask me about it, or just ask me anything.</div>
             </div>
         </div>
@@ -376,7 +380,9 @@
             typingRow.className = 'typing-row';
             typingRow.id = 'typing';
             typingRow.innerHTML = `
-                <div class="avatar bot">🤖</div>
+                <div class="avatar bot">
+                <img src="images/GVS.png" alt="Bot" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                </div>
                 <div class="typing-bubble">
                     <div class="dot"></div>
                     <div class="dot"></div>
@@ -407,7 +413,9 @@
             const row = document.createElement('div');
             row.className = `msg-row ${sender}`;
 
-            const avatarIcon = sender === 'bot' ? '✈️' : '👤';
+            const avatarIcon = sender === 'bot' 
+    ? '<img src="images/GVS.png" alt="Bot" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">'
+    : '👤';
             const avatar = `<div class="avatar ${sender}">${avatarIcon}</div>`;
 
             const bubble = document.createElement('div');
