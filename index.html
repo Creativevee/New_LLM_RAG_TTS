@@ -54,14 +54,14 @@
         }
 
         .header-info span {
-            font-size: 12px;
+            font-size: 12px; /* <!-- UPLOAD BAR   HL-9-->online status */
             color: #4caf50;
             display: flex;
             align-items: center;
             gap: 4px;
         }
 
-        .header-info span::before {
+        .header-info span::before {    /* <!-- UPLOAD BAR   HL-9-->online status */
             content: '';
             width: 7px;
             height: 7px;
@@ -241,7 +241,7 @@
             filter: invert(1) hue-rotate(180deg) brightness(0.85);
         }
 
-        /* INPUT AREA */
+        /* INPUT AREA HL5  */
         .input-area {
             padding: 16px 20px;
             background: #15181f;
@@ -251,7 +251,7 @@
             align-items: center;
         }
 
-        .input-area input {
+        .input-area input {  /* INPUT AREA HL5  */
             flex: 1;
             padding: 13px 18px;
             background: #1a1d28;
@@ -263,9 +263,9 @@
             transition: border-color 0.2s;
         }
 
-        .input-area input::placeholder { color: #4a4e65; }
+        .input-area input::placeholder { color: #4a4e65; }   /* INPUT AREA HL5  */
         .input-area input:focus { border-color: #4f6ef7; }
- /* CHAT BOX- send button -HL-7 */
+ /* CHAT BOX- send button - HL5 +HL-7 */
         .send-btn {
             width: 46px;
             height: 46px;
@@ -281,7 +281,7 @@
             flex-shrink: 0;
         }
 
-        .send-btn:hover { opacity: 0.88; }
+        .send-btn:hover { opacity: 0.88; }  /* INPUT AREA HL5  */
         .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
         .send-btn svg { width: 20px; height: 20px; }
@@ -297,7 +297,7 @@
             </div>
             <div class="header-info">
                 <h1>General Visa Services Chatbot</h1>
-                <span>Online</span>
+                <span>Online</span>    <!-- <!-- UPLOAD BAR   HL-9--> -->
             </div>
         </div>
 
@@ -358,7 +358,7 @@
             try {
                 const res = await fetch('/upload', { method: 'POST', body: formData });
                 const data = await res.json();
-                addMessage(data.message || data.error, 'bot');
+                addMessage(data.message || data.error, 'bot');            /* Build msg HL-4 add typing */
             } catch (err) {
                 addMessage('Upload failed: ' + err.message, 'bot');
             } finally {
