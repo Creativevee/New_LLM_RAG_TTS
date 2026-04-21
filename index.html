@@ -265,7 +265,7 @@
 
         .input-area input::placeholder { color: #4a4e65; }
         .input-area input:focus { border-color: #4f6ef7; }
-
+ /* CHAT BOX- send button -HL-7 */
         .send-btn {
             width: 46px;
             height: 46px;
@@ -318,10 +318,10 @@
             </div>
         </div>
 
-        <!-- INPUT -->
+        <!-- INPUT   /* CHAT BOX send button -HL-7 */-->
         <div class="input-area">
             <input type="text" id="questionInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')askQuestion()">
-            <button class="send-btn" id="sendBtn" onclick="askQuestion()">
+            <button class="send-btn" id="sendBtn" onclick="askQuestion()">   <!-- INPUT   /* CHAT BOX -HL-7 */-->
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="22" y1="2" x2="11" y2="13"></line>
                     <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -331,9 +331,9 @@
     </div>
 
     <script>
-        const chatBox = document.getElementById('chatBox');
+        const chatBox = document.getElementById('chatBox');    
         const questionInput = document.getElementById('questionInput');
-        const sendBtn = document.getElementById('sendBtn');
+        const sendBtn = document.getElementById('sendBtn');                        /* CHAT BOX send button -HL-7 */
         const uploadBtn = document.getElementById('uploadBtn');
 
         function updateFileName() {
