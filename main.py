@@ -2,10 +2,7 @@
 from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-<<<<<<< HEAD
-=======
 from uuid import uuid4
->>>>>>> e3fa7c5 (Added context memory to chatbot: now it keeps track of current conversation with the user and replies to following-up questions. Added functionality to store any conversation as a thread that can be re-opened and followed-up)
 
 # ✅ Import everything needed from rag.py
 from rag import (
@@ -15,14 +12,11 @@ from rag import (
     text_to_speech,
     validate_file,
     ALLOWED_EXTENSIONS,
-<<<<<<< HEAD
-=======
     get_recent_chat_history,
     store_chat_message,
     chat_collection,
     create_thread,
     get_thread_list,
->>>>>>> e3fa7c5 (Added context memory to chatbot: now it keeps track of current conversation with the user and replies to following-up questions. Added functionality to store any conversation as a thread that can be re-opened and followed-up)
 )
 from io import BytesIO
 import os
@@ -60,28 +54,6 @@ async def upload_file(file: UploadFile = File(...)):
         },
     }
 
-<<<<<<< HEAD
-
-# Chat endpoint
-@app.post("/chat")
-async def chat(question: str = Form(...)):
-    # 1. Search context
-    context = search_context(question)
-    if not context:
-        context = "No relevant document context found."
-
-    # 2. Get LLM answer
-    answer = get_answer(question, context)
-
-    # 3. Generate speech
-    audio_bytes = await text_to_speech(answer)
-
-    # Return JSON with text + audio as base64
-    audio_b64 = base64.b64encode(audio_bytes).decode()
-
-    return {"text": answer, "audio": f"data:audio/mp3;base64,{audio_b64}"}
-
-=======
 #keeping context of the chat
 @app.post("/chat")
 async def chat(question: str = Form(...), session_id: str = Form(...)):
@@ -140,7 +112,6 @@ async def get_thread_messages(session_id: str):
         if m.get("type") != "thread_meta"
     ]
     return {"messages": messages}      
->>>>>>> e3fa7c5 (Added context memory to chatbot: now it keeps track of current conversation with the user and replies to following-up questions. Added functionality to store any conversation as a thread that can be re-opened and followed-up)
 
 # Health check
 @app.get("/health")
@@ -153,7 +124,4 @@ if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 7860))
     uvicorn.run(app, host="0.0.0.0", port=port)
-<<<<<<< HEAD
-=======
 
->>>>>>> e3fa7c5 (Added context memory to chatbot: now it keeps track of current conversation with the user and replies to following-up questions. Added functionality to store any conversation as a thread that can be re-opened and followed-up)

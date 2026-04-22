@@ -2,10 +2,7 @@
 import os
 import re
 import time
-<<<<<<< HEAD
-=======
 from datetime import datetime
->>>>>>> e3fa7c5 (Added context memory to chatbot: now it keeps track of current conversation with the user and replies to following-up questions. Added functionality to store any conversation as a thread that can be re-opened and followed-up)
 from pathlib import Path
 from huggingface_hub import InferenceClient
 from pypdf import PdfReader
@@ -28,9 +25,6 @@ ALLOWED_EXTENSIONS = {'.pdf', '.txt', '.docx', '.csv', '.json', '.md'}
 # Initialize
 client = InferenceClient(token=HF_TOKEN)
 chroma_client = chromadb.Client()
-<<<<<<< HEAD
-collection = chroma_client.get_or_create_collection(name="knowledge_base")
-=======
 
 #keeping memory of chats
 EFE = embedding_functions.SentenceTransformerEmbeddingFunction(
@@ -93,7 +87,6 @@ def get_thread_list():
             "created_at": m["created_at"],
         })
     return threads
->>>>>>> e3fa7c5 (Added context memory to chatbot: now it keeps track of current conversation with the user and replies to following-up questions. Added functionality to store any conversation as a thread that can be re-opened and followed-up)
 
 # --- TEXT CLEANING ---
 def clean_text(text):
@@ -229,25 +222,6 @@ def search_context(query, n_results=5):
     return ""
 
 # --- LLM ---
-<<<<<<< HEAD
-def get_answer(question, context):
-    has_context = bool(context and context.strip() and context != "No relevant document context found.")
-    if has_context:
-        system_prompt = (
-            "You are a helpful AI assistant. A document has been uploaded for reference. "
-            "If the question relates to the document, use the provided context to answer. "
-            "If the question is general or unrelated to the document, answer from your own knowledge. "
-            "Keep answers clear and concise — 2 to 4 sentences. Do not over-explain."
-        )
-        user_content = f"DOCUMENT CONTEXT:\n{context}\n\nQUESTION: {question}\n\nANSWER:"
-    else:
-        system_prompt = (
-            "You are a helpful AI assistant. Answer any question the user asks clearly and concisely. "
-            "Keep answers 2 to 4 sentences — informative but not overly detailed."
-        )
-        user_content = question
-
-=======
 def get_answer(question, context, history=None):
     #Combining conversation history with context if available
     context_parts = []
@@ -270,7 +244,6 @@ def get_answer(question, context, history=None):
             "Keep answers 2–4 sentences — informative but not overly detailed."
         )
         user_content = question
->>>>>>> e3fa7c5 (Added context memory to chatbot: now it keeps track of current conversation with the user and replies to following-up questions. Added functionality to store any conversation as a thread that can be re-opened and followed-up)
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_content}
@@ -294,9 +267,6 @@ async def text_to_speech(text):
         if chunk["type"] == "audio":
             audio_data += chunk["data"]
     return audio_data
-<<<<<<< HEAD
-=======
 
 
 
->>>>>>> e3fa7c5 (Added context memory to chatbot: now it keeps track of current conversation with the user and replies to following-up questions. Added functionality to store any conversation as a thread that can be re-opened and followed-up)
