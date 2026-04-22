@@ -241,6 +241,30 @@
             filter: invert(1) hue-rotate(180deg) brightness(0.85);
         }
 
+        .sources {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #2a2e40;
+        }
+
+        .sources-title {
+            font-size: 12px;
+            color: #9aa0be;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .source-item {
+            font-size: 12px;
+            color: #b8bdd8;
+            margin-bottom: 6px;
+            line-height: 1.45;
+        }
+
+        .source-item strong {
+            color: #d6daf0;
+        }
+
         /* INPUT AREA */
         .input-area {
             padding: 16px 20px;
@@ -393,7 +417,7 @@
                 const data = await res.json();
 
                 document.getElementById('typing')?.remove();
-                addMessage(data.text, 'bot', data.audio);
+                addMessage(data.text, 'bot', data.audio, data.sources || []);
 
             } catch (err) {
                 document.getElementById('typing')?.remove();
@@ -403,7 +427,7 @@
             }
         }
 
-        function addMessage(text, sender, audioUrl = null) {
+        function addMessage(text, sender, audioUrl = null, sources = []) {
             const row = document.createElement('div');
             row.className = `msg-row ${sender}`;
 
@@ -420,6 +444,27 @@
                 audio.src = audioUrl;
                 bubble.appendChild(audio);
                 setTimeout(() => audio.play().catch(() => {}), 100);
+            }
+
+            if (sender === 'bot' && Array.isArray(sources) && sources.length) {
+                const sourcesBlock = document.createElement('div');
+                sourcesBlock.className = 'sources';
+
+                const title = document.createElement('div');
+                title.className = 'sources-title';
+                title.textContent = 'Sources';
+                sourcesBlock.appendChild(title);
+
+                sources.forEach((src) => {
+                    const item = document.createElement('div');
+                    item.className = 'source-item';
+                    const sourceName = src.source || 'uploaded_document';
+                    const preview = src.preview || '';
+                    item.innerHTML = `<strong>${sourceName}</strong> (chunk ${src.chunk_index}): ${preview.replace(/\n/g, '<br>')}`;
+                    sourcesBlock.appendChild(item);
+                });
+
+                bubble.appendChild(sourcesBlock);
             }
 
             if (sender === 'bot') {

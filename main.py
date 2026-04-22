@@ -53,9 +53,10 @@ async def upload_file(file: UploadFile = File(...)):
 @app.post("/chat")
 async def chat(question: str = Form(...)):
     # 1. Search context
-    context = search_context(question)
+    context, sources = search_context(question)
     if not context:
         context = "No relevant document context found."
+        sources = []
 
     # 2. Get LLM answer
     answer = get_answer(question, context)
@@ -66,7 +67,11 @@ async def chat(question: str = Form(...)):
     # Return JSON with text + audio as base64
     audio_b64 = base64.b64encode(audio_bytes).decode()
 
-    return {"text": answer, "audio": f"data:audio/mp3;base64,{audio_b64}"}
+    return {
+        "text": answer,
+        "audio": f"data:audio/mp3;base64,{audio_b64}",
+        "sources": sources
+    }
 
 
 # Health check

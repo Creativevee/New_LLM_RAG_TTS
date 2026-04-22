@@ -128,6 +128,7 @@ def index_document(file_content: bytes, filename: str):
 
     try:
         text, metadata = load_document(tmp_path)
+        metadata["source"] = filename
         chunks = split_text(text)
 
         try:
@@ -155,9 +156,32 @@ def index_document(file_content: bytes, filename: str):
 # --- SEARCH ---
 def search_context(query, n_results=5):
     results = collection.query(query_texts=[query], n_results=n_results)
-    if results["documents"][0]:
-        return "\n\n".join(results["documents"][0])
-    return ""
+    documents = results.get("documents", [[]])[0]
+    metadatas = results.get("metadatas", [[]])[0]
+
+    if not documents:
+        return "", []
+
+    context = "\n\n".join(documents)
+    sources = []
+    for idx, doc in enumerate(documents):
+        metadata = metadatas[idx] if idx < len(metadatas) and metadatas[idx] else {}
+        source_name = metadata.get("source", "uploaded_document")
+        source_type = metadata.get("type", "unknown")
+        preview = doc[:220].strip()
+        if len(doc) > 220:
+            preview += "..."
+
+        sources.append(
+            {
+                "source": source_name,
+                "type": source_type,
+                "chunk_index": idx + 1,
+                "preview": preview,
+            }
+        )
+
+    return context, sources
 
 # --- LLM ---
 def get_answer(question, context):
