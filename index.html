@@ -281,6 +281,47 @@
             flex-shrink: 0;
         }
 
+        .threads-panel {
+            width: 240px;
+            background: #0d0d0d;
+            border-right: 1px solid #1e2130;
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+        }
+
+        #newThreadBtn {
+            margin-bottom: 10px;
+        }
+
+        .threads-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .threads-list li {
+            padding: 6px 10px;
+            margin-bottom: 4px;
+            background: #15181f;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #a0a4bb;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .threads-list li:hover {
+            background: #1e2130;
+        }
+
+        .threads-list li.active {
+            background: #2a2e40;
+            color: #d4d7e8;
+        }
+
         .send-btn:hover { opacity: 0.88; }
         .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -290,43 +331,49 @@
 <body>
     <div class="container">
 
-        <!-- HEADER -->
-        <div class="header">
-            <div class="header-avatar">🤖</div>
-            <div class="header-info">
-                <h1>Hexagon Labs Chatbot</h1>
-                <span>Online</span>
+        <!--Threads bar (left side)-->
+        <div class="threads-panel">
+            <button id="newThreadBtn" class="file-btn" onclick="newThread()">+ New Thread</button>
+            <ul id="threads-list" class="threads-list"></ul>
+        </div>
+
+        <!--chat panel (right side)-->
+        <div>
+            <!-- HEADER -->
+            <div class="header">
+                <div class="header-avatar">🤖</div>
+                <div class="header-info">
+                    <h1>Hexagon Labs Chatbot</h1>
+                    <span>Online</span>
+                </div>
             </div>
-        </div>
-
-        <!-- UPLOAD BAR -->
-        <div class="upload-bar">
-            <span class="upload-label">📎 Document:</span>
-            <label class="file-btn" for="fileInput">
-                📁 Choose File
-            </label>
-            <input type="file" id="fileInput" accept=".pdf,.txt,.docx,.csv,.json,.md" onchange="updateFileName()">
-            <span id="fileName">No file chosen</span>
-            <button class="upload-btn" id="uploadBtn" onclick="uploadFile()">Upload</button>
-        </div>
-
-        <!-- CHAT -->
-        <div class="chat-box" id="chatBox">
-            <div class="msg-row">
-                <div class="avatar bot">🤖</div>
-                <div class="bubble bot">Hello! I'm your AI assistant. You can upload a document and ask me about it, or just ask me anything.</div>
+            <!-- UPLOAD BAR -->
+            <div class="upload-bar">
+                <span class="upload-label">📎 Document:</span>
+                <label class="file-btn" for="fileInput">
+                    📁 Choose File
+                </label>
+                <input type="file" id="fileInput" accept=".pdf,.txt,.docx,.csv,.json,.md" onchange="updateFileName()">
+                <span id="fileName">No file chosen</span>
+                <button class="upload-btn" id="uploadBtn" onclick="uploadFile()">Upload</button>
             </div>
-        </div>
-
-        <!-- INPUT -->
-        <div class="input-area">
-            <input type="text" id="questionInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')askQuestion()">
-            <button class="send-btn" id="sendBtn" onclick="askQuestion()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                </svg>
-            </button>
+            <!-- CHAT -->
+            <div class="chat-box" id="chatBox">
+                <div class="msg-row">
+                    <div class="avatar bot">🤖</div>
+                    <div class="bubble bot">Hello! I'm your AI assistant. You can upload a document and ask me about it, or just ask me anything.</div>
+                </div>
+            </div>
+            <!-- INPUT -->
+            <div class="input-area">
+                <input type="text" id="questionInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')askQuestion()">
+                <button class="send-btn" id="sendBtn" onclick="askQuestion()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -366,11 +413,9 @@
         async function askQuestion() {
             const question = questionInput.value.trim();
             if (!question) return;
-
             addMessage(question, 'user');
             questionInput.value = '';
             sendBtn.disabled = true;
-
             // Typing indicator
             const typingRow = document.createElement('div');
             typingRow.className = 'typing-row';
@@ -384,17 +429,14 @@
                 </div>`;
             chatBox.appendChild(typingRow);
             chatBox.scrollTop = chatBox.scrollHeight;
-
             try {
                 const formData = new FormData();
                 formData.append('question', question);
-
+                formData.append("session_id", selected_session_id);
                 const res = await fetch('/chat', { method: 'POST', body: formData });
                 const data = await res.json();
-
                 document.getElementById('typing')?.remove();
                 addMessage(data.text, 'bot', data.audio);
-
             } catch (err) {
                 document.getElementById('typing')?.remove();
                 addMessage('Error: ' + err.message, 'bot');
@@ -433,6 +475,83 @@
             chatBox.appendChild(row);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
+
+        async function loadThreads() {
+            const res = await fetch("/threads");
+            const data = await res.json();
+            const list = document.getElementById("threads-list");
+            list.innerHTML = data.threads
+                .map(t => `<li onclick="selectThread('${t.session_id}')">${t.title}</li>`)
+                .join("");
+        }
+
+        //Global state:
+        let selected_session_id = "default";
+
+        async function loadThreads() {
+            try {
+                const res = await fetch("/threads");
+                const data = await res.json();
+                const list = document.getElementById("threads-list");
+                list.innerHTML = data.threads
+                    .map(t => `
+                        <li onclick="selectThread('${t.session_id}', '${t.title}')">
+                            ${t.title}
+                        </li>
+                    `)
+                    .join("");
+            } catch (err) {
+                console.error("Failed to load threads:", err);
+            }
+        }
+
+        async function selectThread(session_id, title = "Untitled") {
+            selected_session_id = session_id;
+            //Clear chat UI
+            document.getElementById("chatBox").innerHTML = "";
+            //DISPLAY LOADING / WELCOME
+            addMessage(`Loaded conversation: <strong>${title}</strong>`, "bot");
+            //FETCH THIS THREAD'S MESSAGES
+            try {
+                const res = await fetch(`/thread/${session_id}`);
+                const data = await res.json();
+                if (Array.isArray(data.messages) && data.messages.length > 0) {
+                    for (const msg of data.messages) {
+                        const sender = msg.role === "assistant" ? "bot" : msg.role;
+                        addMessage(msg.text, sender);
+                    }
+                } else {
+                    // Thread exists but has no messages yet
+                    addMessage("This is a new thread. Start by asking a question.", "bot");
+                }
+            } catch (err) {
+                addMessage("Failed to load thread messages.", "bot");
+            }
+        }
+
+        async function newThread() {
+            const title = prompt("Thread title:", "New conversation");
+            if (!title) return;
+            try {
+                const res = await fetch("/new_thread", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: `title=${encodeURIComponent(title)}`
+                });
+                const data = await res.json();
+                selected_session_id = data.session_id;
+                document.getElementById("chatBox").innerHTML = "";
+                loadThreads();
+                selectThread(data.session_id, data.title);
+            } catch (err) {
+                addMessage("Failed to create new thread.", "bot");
+            }
+        }
+        // PAGE INIT
+        document.addEventListener("DOMContentLoaded", () => {
+            loadThreads();
+        });
+
     </script>
 </body>
 </html>
