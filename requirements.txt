@@ -7,5 +7,4 @@ pypdf
 edge-tts
 aiofiles
 jinja2
-sentence-transformers
 python-docx

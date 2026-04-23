@@ -18,8 +18,8 @@ A RAG-powered AI chatbot with Text-to-Speech. Upload a document and ask question
 
 **1. Clone the repo**
 ```bash
-git clone <your-repo-url>
-cd <repo-folder>
+git clone https://github.com/Creativevee/New_LLM_RAG_TTS.git
+cd New_LLM_RAG_TTS
 ```
 
 **2. Create a virtual environment and install dependencies**
