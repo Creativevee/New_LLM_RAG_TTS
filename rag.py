@@ -27,9 +27,7 @@ client = InferenceClient(token=HF_TOKEN)
 chroma_client = chromadb.Client()
 
 #keeping memory of chats
-EFE = embedding_functions.SentenceTransformerEmbeddingFunction(
-    model_name="sentence-transformers/multi-qa-MiniLM-L6-cos-v1"
-)
+EFE = embedding_functions.DefaultEmbeddingFunction()
 collection = chroma_client.get_or_create_collection(
     name="knowledge_base",
     embedding_function=EFE
