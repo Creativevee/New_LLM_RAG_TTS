@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rakesh — Document Q&A</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div>
+          <div class="brand-title">Doc Q&amp;A</div>
+          <div class="brand-sub">Rakesh build</div>
+        </div>
+      </div>
+
+      <div class="dropzone" id="dropzone">
+        <p class="dz-title">Drop a document here</p>
+        <p class="dz-sub">or click to choose · PDF, DOCX, TXT, MD · 20 MB max</p>
+        <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md" hidden />
+      </div>
+
+      <div class="docs">
+        <div class="docs-head">
+          <span>Indexed documents</span>
+          <button id="resetBtn" class="ghost" title="Clear all">clear</button>
+        </div>
+        <ul id="docList" class="doc-list"></ul>
+      </div>
+
+      <div class="status" id="status">Ready.</div>
+    </aside>
+
+    <main class="chat">
+      <header class="chat-head">
+        <h1>Ask anything about your documents</h1>
+        <label class="toggle">
+          <input type="checkbox" id="speakToggle" checked />
+          <span>Speak the answer</span>
+        </label>
+      </header>
+
+      <section id="messages" class="messages">
+        <div class="empty">
+          <h2>Upload a document to start</h2>
+          <p>Drop a file on the left, then ask a question below.</p>
+        </div>
+      </section>
+
+      <form id="askForm" class="composer">
+        <textarea
+          id="questionInput"
+          placeholder="Type your question and press Enter…"
+          rows="1"
+          autocomplete="off"
+        ></textarea>
+        <button type="submit" id="askBtn">Ask</button>
+      </form>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
