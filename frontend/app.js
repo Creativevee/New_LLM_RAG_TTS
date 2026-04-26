@@ -50,7 +50,8 @@ function attachSourcesAndAudio(node, sources, audioUrl) {
       if (seen.has(s.doc)) return;
       seen.add(s.doc);
       const tag = document.createElement("span");
-      tag.textContent = `${s.doc} · ${(s.score * 100).toFixed(0)}%`;
+      const pct = Math.max(0, Math.min(100, s.score * 100));
+      tag.textContent = `${s.doc} · ${pct.toFixed(0)}%`;
       wrap.appendChild(tag);
     });
     node.appendChild(wrap);
