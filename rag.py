@@ -45,7 +45,11 @@ def store_chat_message(session_id: str, role: str, text: str):
     chat_collection.add(
         ids=[f"{session_id}_{int(time.time() * 1e6)}"],
         documents=[text],
-        metadatas=[{"session_id": session_id, "role": role}]
+        metadatas=[{
+    "session_id": session_id,
+    "role": role,
+    "timestamp": time.time()
+}]
     )
 
 def get_recent_chat_history(session_id: str, limit=10):

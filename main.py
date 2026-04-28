@@ -56,25 +56,36 @@ async def upload_file(file: UploadFile = File(...)):
 
 #keeping context of the chat
 @app.post("/chat")
+@app.post("/chat")
 async def chat(question: str = Form(...), session_id: str = Form(...)):
-    #retrieving recent chat history
-    history_items = get_recent_chat_history(session_id, limit=10)
+    create_thread(session_id, question[:40])
+    history_items = get_thread_history(session_id)
     history_text = "\n".join([
         f"{item['role'].upper()}: {item['text']}"
         for item in history_items
     ])
-    #answering based on context
+
     context = search_context(question)
     if not context:
         context = "No relevant document context found."
-    answer = get_answer(question, context, history=history_text)
+
+    try:
+        answer = get_answer(question, context, history=history_text)
+    except Exception as e:
+        answer = f"Error: {str(e)}"
+
     if not answer or not isinstance(answer, str):
         answer = "Sorry, the assistant could not generate a response."
+
     store_chat_message(session_id, "user", question)
     store_chat_message(session_id, "assistant", answer)
-    audio_bytes = await text_to_speech(answer)
-    audio_b64 = base64.b64encode(audio_bytes).decode()
-    return {"text": answer, "audio": f"data:audio/mp3;base64,{audio_b64}"}
+
+    try:
+        audio_bytes = await text_to_speech(answer)
+        audio_b64 = base64.b64encode(audio_bytes).decode()
+        return {"text": answer, "audio": f"data:audio/mp3;base64,{audio_b64}"}
+    except Exception as e:
+        return {"text": answer, "audio": ""}
 
 #creating a new thread
 @app.post("/new_thread")
@@ -87,7 +98,45 @@ async def new_thread(title: str = Form("Untitled")):
 @app.get("/threads")
 async def threads():
     thread_list = get_thread_list()
-    return {"threads": thread_list}  
+
+    formatted_threads = []
+
+    for thread in thread_list:
+        session_id = thread.get("session_id")
+        title = thread.get("title", "Untitled")
+
+        # Get messages for preview
+        results = chat_collection.get(where={"session_id": session_id})
+
+        preview = ""
+        last_time = ""
+
+        if results and results.get("documents"):
+            messages = results["documents"]
+            metadatas = results.get("metadatas", [])
+
+            # Take last message
+            last_msg = messages[-1]
+            preview = last_msg[:60]
+
+            if metadatas and len(metadatas) > 0:
+                last_time = metadatas[-1].get("timestamp", "")
+
+        formatted_threads.append({
+            "session_id": session_id,
+            "title": title,
+            "preview": preview,
+            "time": last_time
+        })
+
+    # Sort newest → oldest
+    formatted_threads = sorted(
+        formatted_threads,
+        key=lambda x: x["time"] if x["time"] else "",
+        reverse=True
+    )
+
+    return {"threads": formatted_threads}  
 
 @app.get("/thread/{session_id}")
 async def get_thread_messages(session_id: str):
