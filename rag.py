@@ -41,7 +41,8 @@ chat_collection = chroma_client.get_or_create_collection(
 
 #storing chats
 def store_chat_message(session_id: str, role: str, text: str):
-    print(f"🔊 Storing chat message: session_id={session_id}, role={role}, text={repr(text[:50])}...")
+    # Take out the symbol because it was giving encoding errors on Windows terminals.
+    print(f"Storing chat message: session_id={session_id}, role={role}, text={repr(text[:50])}...")
     chat_collection.add(
         ids=[f"{session_id}_{int(time.time() * 1e6)}"],
         documents=[text],
@@ -85,6 +86,24 @@ def get_thread_list():
             "created_at": m["created_at"],
         })
     return threads
+
+
+def reset_thread_messages(session_id: str) -> int:
+    """Delete user/assistant messages for a thread, keep thread metadata."""
+    results = chat_collection.get(where={"session_id": session_id})
+    ids = results.get("ids", []) or []
+    metadatas = results.get("metadatas", []) or []
+
+    ids_to_delete = []
+    for msg_id, metadata in zip(ids, metadatas):
+        metadata = metadata or {}
+        if metadata.get("type") != "thread_meta":
+            ids_to_delete.append(msg_id)
+
+    if ids_to_delete:
+        chat_collection.delete(ids=ids_to_delete)
+
+    return len(ids_to_delete)
 
 # --- TEXT CLEANING ---
 def clean_text(text):

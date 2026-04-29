@@ -107,6 +107,27 @@
             flex-shrink: 0;
         }
 
+        .header-actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .reset-chat-btn {
+            padding: 8px 12px;
+            background: #2a1318;
+            color: #f4b8c0;
+            border: 1px solid #5a222d;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .reset-chat-btn:hover { opacity: 0.85; }
+
         .header-avatar {
             width: 40px;
             height: 40px;
@@ -374,6 +395,102 @@
         .send-btn:hover { opacity: 0.85; }
         .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .send-btn svg { width: 20px; height: 20px; }
+
+        .toast {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #e8eaf0;
+            background: #1a1d28;
+            border: 1px solid #2a2e40;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            opacity: 0;
+            transform: translateY(8px);
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            z-index: 9999;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            border-color: #23663a;
+            color: #c5f3d3;
+            background: #112319;
+        }
+
+        .toast.error {
+            border-color: #6b2430;
+            color: #f4c0c7;
+            background: #281218;
+        }
+
+        .confirm-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+        }
+
+        .confirm-overlay.show {
+            display: flex;
+        }
+
+        .confirm-modal {
+            width: min(420px, calc(100vw - 32px));
+            background: #141821;
+            border: 1px solid #2a2e40;
+            border-radius: 12px;
+            padding: 18px;
+            color: #dfe3f5;
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+        }
+
+        .confirm-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .confirm-text {
+            font-size: 13px;
+            color: #b7bdd8;
+            line-height: 1.5;
+            margin-bottom: 14px;
+        }
+
+        .confirm-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .confirm-btn {
+            border: 1px solid #2a2e40;
+            background: #1a1d28;
+            color: #dbe0f2;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .confirm-btn.danger {
+            background: #5a222d;
+            border-color: #7a2c3a;
+            color: #ffd9de;
+        }
     </style>
 </head>
 <body>
@@ -397,6 +514,9 @@
                     <span class="status-dot"></span>
                     Online
                 </div>
+            </div>
+            <div class="header-actions">
+                <button id="resetChatBtn" class="reset-chat-btn" onclick="resetChatFlow()">Reset Chat</button>
             </div>
         </div>
 
@@ -431,12 +551,26 @@
         </div>
 
     </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="confirmOverlay" class="confirm-overlay" aria-hidden="true">
+        <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+            <div id="confirmTitle" class="confirm-title">Reset chat</div>
+            <div class="confirm-text">Would you like to reset chat? This clears messages and conversation context for this thread.</div>
+            <div class="confirm-actions">
+                <button type="button" class="confirm-btn" onclick="closeResetConfirm()">No, keep chat</button>
+                <button type="button" class="confirm-btn danger" onclick="confirmResetChat()">Yes, reset</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         const chatBox = document.getElementById('chatBox');
         const questionInput = document.getElementById('questionInput');
         const sendBtn = document.getElementById('sendBtn');
         const uploadBtn = document.getElementById('uploadBtn');
+        const toast = document.getElementById('toast');
+        const confirmOverlay = document.getElementById('confirmOverlay');
+        let toastTimer = null;
 
         let selected_session_id = 'default';
 
@@ -610,6 +744,55 @@
                 addMessage(`Started new conversation: <strong>${data.title}</strong>`, 'bot');
             } catch (err) {
                 addMessage('Failed to create new thread.', 'bot');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            if (!toast) return;
+            toast.classList.remove('success', 'error', 'show');
+            toast.textContent = message;
+            toast.classList.add(type === 'error' ? 'error' : 'success');
+            // Trigger transition reliably after class reset.
+            requestAnimationFrame(() => toast.classList.add('show'));
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2400);
+        }
+
+        async function resetChatFlow() {
+            if (!selected_session_id) {
+                addMessage('Please select or create a conversation first.', 'bot');
+                return;
+            }
+            openResetConfirm();
+        }
+
+        function openResetConfirm() {
+            if (!confirmOverlay) return;
+            confirmOverlay.classList.add('show');
+            confirmOverlay.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeResetConfirm() {
+            if (!confirmOverlay) return;
+            confirmOverlay.classList.remove('show');
+            confirmOverlay.setAttribute('aria-hidden', 'true');
+        }
+
+        async function confirmResetChat() {
+            closeResetConfirm();
+
+            try {
+                const res = await fetch(`/thread/${selected_session_id}/reset`, { method: 'POST' });
+                if (!res.ok) {
+                    throw new Error(`Reset failed (${res.status})`);
+                }
+
+                chatBox.innerHTML = '';
+                showToast('Chat reset successfully.', 'success');
+            } catch (err) {
+                showToast('Failed to reset chat. Please try again.', 'error');
             }
         }
 

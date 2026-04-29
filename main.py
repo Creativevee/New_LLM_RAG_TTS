@@ -17,6 +17,7 @@ from rag import (
     chat_collection,
     create_thread,
     get_thread_list,
+    reset_thread_messages,
 )
 from io import BytesIO
 import os
@@ -113,6 +114,12 @@ async def get_thread_messages(session_id: str):
         if m.get("type") != "thread_meta"
     ]
     return {"messages": messages}      
+
+
+@app.post("/thread/{session_id}/reset")
+async def reset_thread(session_id: str):
+    deleted_count = reset_thread_messages(session_id)
+    return {"message": "Chat reset successfully.", "deleted_messages": deleted_count}
 
 # Health check
 @app.get("/health")
