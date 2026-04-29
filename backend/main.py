@@ -15,9 +15,14 @@ from config import (
 )
 from conversations import (
     add_message,
+    conversation_exists,
+    conversation_message_count,
     create_conversation,
+    delete_conversation,
     get_conversation,
     list_conversations,
+    make_title,
+    rename_conversation,
 )
 from generator import generate
 from ingest import index_file, list_documents, reset_index
@@ -123,6 +128,24 @@ def conversations_get(conversation_id: str):
     return conv
 
 
+class RenameRequest(BaseModel):
+    title: str
+
+
+@app.patch("/conversations/{conversation_id}")
+def conversations_rename(conversation_id: str, payload: RenameRequest):
+    if not rename_conversation(conversation_id, payload.title):
+        raise HTTPException(404, "Conversation not found")
+    return {"status": "ok"}
+
+
+@app.delete("/conversations/{conversation_id}")
+def conversations_delete(conversation_id: str):
+    if not delete_conversation(conversation_id):
+        raise HTTPException(404, "Conversation not found")
+    return {"status": "deleted"}
+
+
 @app.post("/ask", response_model=AskResponse)
 def ask(req: AskRequest):
     question = req.question.strip()
@@ -130,20 +153,23 @@ def ask(req: AskRequest):
         raise HTTPException(400, "Question is empty")
 
     cid = req.conversation_id
-    if not cid:
-        cid = create_conversation(question[:60])["id"]
+    if not cid or not conversation_exists(cid):
+        cid = create_conversation(make_title(question))["id"]
+    elif conversation_message_count(cid) == 0:
+        rename_conversation(cid, make_title(question))
 
     hits = retrieve(question)
     if not hits:
         answer = "No documents are indexed yet. Please upload one first."
         add_message(cid, "user", question)
         add_message(cid, "assistant", answer)
+        conv = get_conversation(cid)
         return AskResponse(
             answer=answer,
             sources=[],
             audio_url=None,
             conversation_id=cid,
-            conversation_title=question[:60] or "New conversation",
+            conversation_title=conv["title"] if conv else make_title(question),
         )
 
     passages = [h["text"] for h in hits]
@@ -154,13 +180,14 @@ def ask(req: AskRequest):
 
     add_message(cid, "user", question)
     add_message(cid, "assistant", text, sources=sources, audio_url=audio_url)
+    conv = get_conversation(cid)
 
     return AskResponse(
         answer=text,
         sources=[SourceHit(**s) for s in sources],
         audio_url=audio_url,
         conversation_id=cid,
-        conversation_title=question[:60] or "New conversation",
+        conversation_title=conv["title"] if conv else make_title(question),
     )
 
 

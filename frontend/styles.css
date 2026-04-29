@@ -117,10 +117,14 @@ html, body {
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   border: 1px solid transparent;
 }
 .convo-list li:hover { border-color: var(--line); }
+.convo-list li.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
 .convo-list li.empty {
   background: transparent;
   color: var(--ink-soft);
@@ -129,11 +133,42 @@ html, body {
   cursor: default;
 }
 .convo-list li.empty:hover { border-color: transparent; }
-.convo-title {
+.convo-main {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.convo-title {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.convo-meta {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+.convo-actions {
+  display: none;
+  gap: 4px;
+}
+.convo-list li:hover .convo-actions,
+.convo-list li.active .convo-actions {
+  display: flex;
+}
+.convo-actions button {
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 12px;
+  border-radius: 4px;
+}
+.convo-actions button:hover {
+  color: var(--accent);
+  background: rgba(217, 106, 44, 0.1);
 }
 
 .divider {

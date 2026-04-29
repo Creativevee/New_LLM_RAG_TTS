@@ -75,6 +75,50 @@ def list_conversations() -> List[Dict]:
     return [dict(r) for r in rows]
 
 
+def conversation_exists(conversation_id: str) -> bool:
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT 1 FROM conversations WHERE id = ?", (conversation_id,)
+        ).fetchone()
+    return row is not None
+
+
+def conversation_message_count(conversation_id: str) -> int:
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) AS n FROM messages WHERE conversation_id = ?",
+            (conversation_id,),
+        ).fetchone()
+    return int(row["n"]) if row else 0
+
+
+def rename_conversation(conversation_id: str, title: str) -> bool:
+    title = (title or "").strip() or "Untitled"
+    with _connect() as conn:
+        cur = conn.execute(
+            "UPDATE conversations SET title = ?, updated_at = ? WHERE id = ?",
+            (title, _now(), conversation_id),
+        )
+    return cur.rowcount > 0
+
+
+def delete_conversation(conversation_id: str) -> bool:
+    with _connect() as conn:
+        cur = conn.execute(
+            "DELETE FROM conversations WHERE id = ?", (conversation_id,)
+        )
+    return cur.rowcount > 0
+
+
+def make_title(text: str, max_chars: int = 60) -> str:
+    text = " ".join((text or "").split())
+    if not text:
+        return "New conversation"
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 1].rstrip() + "…"
+
+
 def get_conversation(conversation_id: str) -> Optional[Dict]:
     with _connect() as conn:
         conv = conn.execute(

@@ -97,6 +97,15 @@ async function refreshDocs() {
   }
 }
 
+function relativeTime(unixSeconds) {
+  const diff = Date.now() / 1000 - unixSeconds;
+  if (diff < 60) return "just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)}d ago`;
+  return new Date(unixSeconds * 1000).toLocaleDateString();
+}
+
 async function refreshConversations() {
   try {
     const res = await fetch(`${API_BASE}/conversations`);
@@ -112,15 +121,81 @@ async function refreshConversations() {
     data.conversations.forEach((c) => {
       const li = document.createElement("li");
       li.dataset.id = c.id;
+      if (c.id === currentConversationId) li.classList.add("active");
+
+      const main = document.createElement("div");
+      main.className = "convo-main";
       const title = document.createElement("span");
       title.className = "convo-title";
       title.textContent = c.title || "Untitled";
-      li.appendChild(title);
+      const meta = document.createElement("span");
+      meta.className = "convo-meta";
+      const count = c.message_count || 0;
+      meta.textContent = `${relativeTime(c.updated_at)} · ${count} msg${count === 1 ? "" : "s"}`;
+      main.appendChild(title);
+      main.appendChild(meta);
+
+      const actions = document.createElement("div");
+      actions.className = "convo-actions";
+      const rename = document.createElement("button");
+      rename.textContent = "rename";
+      rename.title = "Rename conversation";
+      rename.addEventListener("click", (e) => {
+        e.stopPropagation();
+        renameConversation(c.id, c.title);
+      });
+      const del = document.createElement("button");
+      del.textContent = "delete";
+      del.title = "Delete conversation";
+      del.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteConversation(c.id);
+      });
+      actions.appendChild(rename);
+      actions.appendChild(del);
+
+      li.appendChild(main);
+      li.appendChild(actions);
       li.addEventListener("click", () => openConversation(c.id));
       convoList.appendChild(li);
     });
   } catch (err) {
     /* sidebar already shows backend status via setStatus */
+  }
+}
+
+async function renameConversation(id, currentTitle) {
+  const next = prompt("Rename conversation", currentTitle || "");
+  if (next === null) return;
+  const title = next.trim();
+  if (!title) return;
+  try {
+    const res = await fetch(`${API_BASE}/conversations/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    });
+    if (!res.ok) throw new Error(`Rename failed (${res.status})`);
+    refreshConversations();
+  } catch (err) {
+    setStatus(`Rename error: ${err.message}`);
+  }
+}
+
+async function deleteConversation(id) {
+  if (!confirm("Delete this conversation? This cannot be undone.")) return;
+  try {
+    const res = await fetch(`${API_BASE}/conversations/${id}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error(`Delete failed (${res.status})`);
+    if (currentConversationId === id) {
+      currentConversationId = null;
+      showEmptyState();
+    }
+    refreshConversations();
+  } catch (err) {
+    setStatus(`Delete error: ${err.message}`);
   }
 }
 

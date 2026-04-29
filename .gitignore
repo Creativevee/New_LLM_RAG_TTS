@@ -15,6 +15,7 @@ env/
 uploads/
 audio/
 vectors/
+data/
 outputs/
 qwen_tts_env/
 
