@@ -75,6 +75,27 @@ def list_conversations() -> List[Dict]:
     return [dict(r) for r in rows]
 
 
+def get_conversation(conversation_id: str) -> Optional[Dict]:
+    with _connect() as conn:
+        conv = conn.execute(
+            "SELECT id, title, created_at, updated_at FROM conversations WHERE id = ?",
+            (conversation_id,),
+        ).fetchone()
+        if not conv:
+            return None
+        rows = conn.execute(
+            "SELECT id, role, content, sources, audio_url, created_at"
+            " FROM messages WHERE conversation_id = ? ORDER BY created_at ASC",
+            (conversation_id,),
+        ).fetchall()
+    msgs = []
+    for r in rows:
+        d = dict(r)
+        d["sources"] = json.loads(d["sources"]) if d.get("sources") else []
+        msgs.append(d)
+    return {**dict(conv), "messages": msgs}
+
+
 def add_message(
     conversation_id: str,
     role: str,

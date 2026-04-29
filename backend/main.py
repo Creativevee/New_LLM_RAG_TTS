@@ -16,6 +16,7 @@ from config import (
 from conversations import (
     add_message,
     create_conversation,
+    get_conversation,
     list_conversations,
 )
 from generator import generate
@@ -112,6 +113,14 @@ class NewConversationRequest(BaseModel):
 def conversations_new(payload: Optional[NewConversationRequest] = None):
     title = (payload.title if payload else None) or "New conversation"
     return create_conversation(title)
+
+
+@app.get("/conversations/{conversation_id}")
+def conversations_get(conversation_id: str):
+    conv = get_conversation(conversation_id)
+    if not conv:
+        raise HTTPException(404, "Conversation not found")
+    return conv
 
 
 @app.post("/ask", response_model=AskResponse)

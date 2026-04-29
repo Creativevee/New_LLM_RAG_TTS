@@ -111,14 +111,40 @@ async function refreshConversations() {
     }
     data.conversations.forEach((c) => {
       const li = document.createElement("li");
+      li.dataset.id = c.id;
       const title = document.createElement("span");
       title.className = "convo-title";
       title.textContent = c.title || "Untitled";
       li.appendChild(title);
+      li.addEventListener("click", () => openConversation(c.id));
       convoList.appendChild(li);
     });
   } catch (err) {
     /* sidebar already shows backend status via setStatus */
+  }
+}
+
+async function openConversation(id) {
+  try {
+    const res = await fetch(`${API_BASE}/conversations/${id}`);
+    if (!res.ok) throw new Error(`Could not open conversation (${res.status})`);
+    const data = await res.json();
+    currentConversationId = data.id;
+    messages.innerHTML = "";
+    if (!data.messages || !data.messages.length) {
+      showEmptyState();
+    } else {
+      data.messages.forEach((m) => {
+        const role = m.role === "user" ? "user" : "bot";
+        const node = appendMessage(role, m.content);
+        if (role === "bot") {
+          attachSourcesAndAudio(node, m.sources || [], m.audio_url, false);
+        }
+      });
+    }
+    questionInput.focus();
+  } catch (err) {
+    setStatus(`Open error: ${err.message}`);
   }
 }
 
