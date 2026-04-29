@@ -17,6 +17,7 @@ from rag import (
     chat_collection,
     create_thread,
     get_thread_list,
+    reset_thread_messages,
 )
 from io import BytesIO
 import os
@@ -63,8 +64,9 @@ async def chat(question: str = Form(...), session_id: str = Form(...)):
         f"{item['role'].upper()}: {item['text']}"
         for item in history_items
     ])
+    sources = []
     #answering based on context
-    context = search_context(question)
+    context, sources = search_context(question)
     if not context:
         context = "No relevant document context found."
     answer = get_answer(question, context, history=history_text)
@@ -74,7 +76,7 @@ async def chat(question: str = Form(...), session_id: str = Form(...)):
     store_chat_message(session_id, "assistant", answer)
     audio_bytes = await text_to_speech(answer)
     audio_b64 = base64.b64encode(audio_bytes).decode()
-    return {"text": answer, "audio": f"data:audio/mp3;base64,{audio_b64}"}
+    return {"text": answer, "audio": f"data:audio/mp3;base64,{audio_b64}", "sources": sources}
 
 #creating a new thread
 @app.post("/new_thread")
@@ -112,6 +114,12 @@ async def get_thread_messages(session_id: str):
         if m.get("type") != "thread_meta"
     ]
     return {"messages": messages}      
+
+
+@app.post("/thread/{session_id}/reset")
+async def reset_thread(session_id: str):
+    deleted_count = reset_thread_messages(session_id)
+    return {"message": "Chat reset successfully.", "deleted_messages": deleted_count}
 
 # Health check
 @app.get("/health")

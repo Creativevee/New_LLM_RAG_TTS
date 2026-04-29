@@ -41,7 +41,8 @@ chat_collection = chroma_client.get_or_create_collection(
 
 #storing chats
 def store_chat_message(session_id: str, role: str, text: str):
-    print(f"🔊 Storing chat message: session_id={session_id}, role={role}, text={repr(text[:50])}...")
+    # Take out the symbol because it was giving encoding errors on Windows terminals.
+    print(f"Storing chat message: session_id={session_id}, role={role}, text={repr(text[:50])}...")
     chat_collection.add(
         ids=[f"{session_id}_{int(time.time() * 1e6)}"],
         documents=[text],
@@ -85,6 +86,24 @@ def get_thread_list():
             "created_at": m["created_at"],
         })
     return threads
+
+
+def reset_thread_messages(session_id: str) -> int:
+    """Delete user/assistant messages for a thread, keep thread metadata."""
+    results = chat_collection.get(where={"session_id": session_id})
+    ids = results.get("ids", []) or []
+    metadatas = results.get("metadatas", []) or []
+
+    ids_to_delete = []
+    for msg_id, metadata in zip(ids, metadatas):
+        metadata = metadata or {}
+        if metadata.get("type") != "thread_meta":
+            ids_to_delete.append(msg_id)
+
+    if ids_to_delete:
+        chat_collection.delete(ids=ids_to_delete)
+
+    return len(ids_to_delete)
 
 # --- TEXT CLEANING ---
 def clean_text(text):
@@ -188,6 +207,7 @@ def index_document(file_content: bytes, filename: str):
 
     try:
         text, metadata = load_document(tmp_path)
+        metadata["source"] = filename
         chunks = split_text(text)
 
         try:
@@ -215,9 +235,32 @@ def index_document(file_content: bytes, filename: str):
 # --- SEARCH ---
 def search_context(query, n_results=5):
     results = collection.query(query_texts=[query], n_results=n_results)
-    if results["documents"][0]:
-        return "\n\n".join(results["documents"][0])
-    return ""
+    documents = results.get("documents", [[]])[0]
+    metadatas = results.get("metadatas", [[]])[0]
+
+    if not documents:
+        return "", []
+
+    context = "\n\n".join(documents)
+    sources = []
+    for idx, doc in enumerate(documents):
+        metadata = metadatas[idx] if idx < len(metadatas) and metadatas[idx] else {}
+        source_name = metadata.get("source", "uploaded_document")
+        source_type = metadata.get("type", "unknown")
+        preview = doc[:220].strip()
+        if len(doc) > 220:
+            preview += "..."
+
+        sources.append(
+            {
+                "source": source_name,
+                "type": source_type,
+                "chunk_index": idx + 1,
+                "preview": preview,
+            }
+        )
+
+    return context, sources
 
 # --- LLM ---
 def get_answer(question, context, history=None):
