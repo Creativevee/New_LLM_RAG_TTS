@@ -26,6 +26,7 @@
             padding: 16px 12px;
             gap: 12px;
         }
+        
 
         .threads-panel-title {
             font-size: 11px;
@@ -35,6 +36,25 @@
             letter-spacing: 0.08em;
             padding: 0 4px;
         }
+        .thread-item {
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 10px;
+    cursor: pointer;
+    color: white;
+    background: #1f1f2e;
+    list-style: none;
+  }
+
+  .thread-item:hover {
+    background: #2c2c44;
+  }
+
+  .thread-preview {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 4px;
+  }
 
         #newThreadBtn {
             display: flex;
@@ -415,6 +435,57 @@
         const uploadBtn = document.getElementById('uploadBtn');
 
         let selected_session_id = 'default';
+        async function loadThreads() {
+  try {
+    const res = await fetch('/threads');
+    const data = await res.json();
+
+    const list = document.getElementById('threads-list');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    data.threads.forEach(thread => {
+      const li = document.createElement('li');
+      li.className = 'thread-item';
+
+      li.innerHTML = `
+        <strong>${thread.title || 'Untitled'}</strong>
+        <div class="thread-preview">${thread.preview || 'No preview yet'}</div>
+      `;
+
+      li.onclick = () => {
+        selected_session_id = thread.session_id;
+        loadThreadMessages(thread.session_id);
+      };
+
+      list.appendChild(li);
+    });
+  } catch (err) {
+    console.error('Failed to load threads:', err);
+  }
+}
+async function loadThreadMessages(sessionId) {
+  try {
+    const res = await fetch(`/thread/${sessionId}`);
+    const data = await res.json();
+
+    chatBox.innerHTML = "";
+
+    if (!data.messages || data.messages.length === 0) {
+      addMessage("No messages found in this conversation.", "bot");
+      return;
+    }
+
+    data.messages.forEach(msg => {
+      addMessage(msg.text, msg.role);
+    });
+  } catch (err) {
+    console.error("Failed to load thread messages:", err);
+    addMessage("Failed to load this conversation.", "bot");
+  }
+}
+window.addEventListener('load', loadThreads);
 
         function updateFileName() {
             const file = document.getElementById('fileInput').files[0];

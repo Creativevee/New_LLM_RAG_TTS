@@ -140,6 +140,23 @@ async def threads():
 
 @app.get("/thread/{session_id}")
 async def get_thread_messages(session_id: str):
+    try:
+        results = chat_collection.get()
+
+        messages = []
+
+        for doc, meta in zip(results["documents"], results["metadatas"]):
+            if meta.get("session_id") == session_id and meta.get("role") != "system":
+                messages.append({
+                    "text": doc,
+                    "role": meta.get("role")
+                })
+
+        return {"messages": messages}
+
+    except Exception as e:
+        print("Error:", e)
+        return {"messages": []}
     results = chat_collection.get(
         where={"session_id": session_id}
     )
