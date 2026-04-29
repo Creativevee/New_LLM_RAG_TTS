@@ -42,16 +42,17 @@ chat_collection = chroma_client.get_or_create_collection(
 #storing chats
 def store_chat_message(session_id: str, role: str, text: str):
     print(f"🔊 Storing chat message: session_id={session_id}, role={role}, text={repr(text[:50])}...")
+
     chat_collection.add(
         ids=[f"{session_id}_{int(time.time() * 1e6)}"],
         documents=[text],
         metadatas=[{
-    "session_id": session_id,
-    "role": role,
-    "timestamp": time.time()
-}]
+            "session_id": session_id,
+            "role": role,
+            "timestamp": time.time(),
+            "type": "chat"   
+        }]
     )
-
 def get_recent_chat_history(session_id: str, limit=10):
     results = chat_collection.get(
         where={"session_id": session_id}

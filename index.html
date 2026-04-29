@@ -434,6 +434,8 @@
         const sendBtn = document.getElementById('sendBtn');
         const uploadBtn = document.getElementById('uploadBtn');
 
+        console.log("INDEX HTML LOADED - latest version");
+
         let selected_session_id = 'default';
         async function loadThreads() {
   try {
@@ -531,8 +533,12 @@ window.addEventListener('load', loadThreads);
 
             try {
                 const formData = new FormData();
-                formData.append('question', question);
-                formData.append('session_id', selected_session_id);
+                formData.append("question", question);
+                formData.append("session_id", selected_session_id);
+
+                console.log("Sending question:", question);
+                console.log("Session:", selected_session_id);
+
                 const res = await fetch('/chat', { method: 'POST', body: formData });
                 const data = await res.json();
                 document.getElementById('typing')?.remove();

@@ -24,6 +24,11 @@ import base64
 
 app = FastAPI()
 
+@app.get("/debug-store")
+async def debug_store():
+    store_chat_message("default", "user", "debug test message")
+    return {"status": "saved"}
+
 
 # Serve frontend
 @app.get("/", response_class=HTMLResponse)
@@ -56,10 +61,10 @@ async def upload_file(file: UploadFile = File(...)):
 
 #keeping context of the chat
 @app.post("/chat")
-@app.post("/chat")
 async def chat(question: str = Form(...), session_id: str = Form(...)):
     create_thread(session_id, question[:40])
-    history_items = get_thread_history(session_id)
+
+    history_items = get_recent_chat_history(session_id)
     history_text = "\n".join([
         f"{item['role'].upper()}: {item['text']}"
         for item in history_items
@@ -155,7 +160,7 @@ async def get_thread_messages(session_id: str):
         return {"messages": messages}
 
     except Exception as e:
-        print("Error:", e)
+        print("Thread fetch error:", e)
         return {"messages": []}
     results = chat_collection.get(
         where={"session_id": session_id}
@@ -190,4 +195,5 @@ if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 7860))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
 
