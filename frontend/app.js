@@ -10,6 +10,10 @@ const questionInput = document.getElementById("questionInput");
 const askBtn = document.getElementById("askBtn");
 const speakToggle = document.getElementById("speakToggle");
 const resetBtn = document.getElementById("resetBtn");
+const convoList = document.getElementById("convoList");
+const newConvoBtn = document.getElementById("newConvoBtn");
+
+let currentConversationId = null;
 
 function setStatus(text) {
   statusEl.textContent = text;
@@ -18,6 +22,12 @@ function setStatus(text) {
 function clearEmptyState() {
   const empty = messages.querySelector(".empty");
   if (empty) empty.remove();
+}
+
+function showEmptyState() {
+  messages.innerHTML =
+    '<div class="empty"><h2>Upload a document to start</h2>' +
+    '<p>Drop a file on the left, then ask a question below.</p></div>';
 }
 
 function appendMessage(role, text) {
@@ -40,7 +50,7 @@ function appendThinking() {
   return node;
 }
 
-function attachSourcesAndAudio(node, sources, audioUrl) {
+function attachSourcesAndAudio(node, sources, audioUrl, autoplay = true) {
   node.classList.remove("thinking");
   if (sources && sources.length) {
     const wrap = document.createElement("div");
@@ -61,7 +71,7 @@ function attachSourcesAndAudio(node, sources, audioUrl) {
     audio.controls = true;
     audio.src = `${API_BASE}${audioUrl}`;
     node.appendChild(audio);
-    audio.play().catch(() => {});
+    if (autoplay) audio.play().catch(() => {});
   }
 }
 
@@ -85,6 +95,37 @@ async function refreshDocs() {
   } catch (err) {
     setStatus("Backend offline. Start the FastAPI server.");
   }
+}
+
+async function refreshConversations() {
+  try {
+    const res = await fetch(`${API_BASE}/conversations`);
+    const data = await res.json();
+    convoList.innerHTML = "";
+    if (!data.conversations.length) {
+      const li = document.createElement("li");
+      li.className = "empty";
+      li.textContent = "No conversations yet.";
+      convoList.appendChild(li);
+      return;
+    }
+    data.conversations.forEach((c) => {
+      const li = document.createElement("li");
+      const title = document.createElement("span");
+      title.className = "convo-title";
+      title.textContent = c.title || "Untitled";
+      li.appendChild(title);
+      convoList.appendChild(li);
+    });
+  } catch (err) {
+    /* sidebar already shows backend status via setStatus */
+  }
+}
+
+function startNewConversation() {
+  currentConversationId = null;
+  showEmptyState();
+  questionInput.focus();
 }
 
 async function uploadFile(file) {
@@ -146,15 +187,21 @@ askForm.addEventListener("submit", async (e) => {
     const res = await fetch(`${API_BASE}/ask`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: q, speak: speakToggle.checked }),
+      body: JSON.stringify({
+        question: q,
+        speak: speakToggle.checked,
+        conversation_id: currentConversationId,
+      }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || `Request failed (${res.status})`);
     }
     const data = await res.json();
+    currentConversationId = data.conversation_id;
     thinking.textContent = data.answer;
-    attachSourcesAndAudio(thinking, data.sources, data.audio_url);
+    attachSourcesAndAudio(thinking, data.sources, data.audio_url, true);
+    refreshConversations();
   } catch (err) {
     thinking.textContent = `Error: ${err.message}`;
     thinking.classList.remove("thinking");
@@ -187,4 +234,7 @@ resetBtn.addEventListener("click", async () => {
   }
 });
 
+newConvoBtn.addEventListener("click", startNewConversation);
+
 refreshDocs();
+refreshConversations();

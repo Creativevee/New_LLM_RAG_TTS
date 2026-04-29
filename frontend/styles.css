@@ -83,6 +83,65 @@ html, body {
   color: var(--ink-soft);
 }
 
+.convos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  max-height: 38vh;
+}
+.convos-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-soft);
+}
+.convo-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  min-height: 0;
+}
+.convo-list li {
+  background: var(--panel-2);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid transparent;
+}
+.convo-list li:hover { border-color: var(--line); }
+.convo-list li.empty {
+  background: transparent;
+  color: var(--ink-soft);
+  font-style: italic;
+  padding: 4px 0;
+  cursor: default;
+}
+.convo-list li.empty:hover { border-color: transparent; }
+.convo-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.divider {
+  height: 1px;
+  background: var(--line);
+  margin: 2px 0;
+}
+
 .docs {
   display: flex;
   flex-direction: column;

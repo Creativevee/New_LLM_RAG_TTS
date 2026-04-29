@@ -13,6 +13,11 @@ from config import (
     MAX_UPLOAD_BYTES,
     UPLOAD_DIR,
 )
+from conversations import (
+    add_message,
+    create_conversation,
+    list_conversations,
+)
 from generator import generate
 from ingest import index_file, list_documents, reset_index
 from retriever import retrieve
@@ -36,6 +41,7 @@ app.mount("/media", StaticFiles(directory=str(AUDIO_DIR)), name="media")
 class AskRequest(BaseModel):
     question: str
     speak: bool = True
+    conversation_id: Optional[str] = None
 
 
 class SourceHit(BaseModel):
@@ -47,6 +53,8 @@ class AskResponse(BaseModel):
     answer: str
     sources: List[SourceHit]
     audio_url: Optional[str] = None
+    conversation_id: str
+    conversation_title: str
 
 
 @app.get("/health")
@@ -91,27 +99,59 @@ async def upload(file: UploadFile = File(...)):
     return {"filename": safe_name, "chunks_added": chunks_added}
 
 
+@app.get("/conversations")
+def conversations_index():
+    return {"conversations": list_conversations()}
+
+
+class NewConversationRequest(BaseModel):
+    title: Optional[str] = None
+
+
+@app.post("/conversations")
+def conversations_new(payload: Optional[NewConversationRequest] = None):
+    title = (payload.title if payload else None) or "New conversation"
+    return create_conversation(title)
+
+
 @app.post("/ask", response_model=AskResponse)
 def ask(req: AskRequest):
-    if not req.question.strip():
+    question = req.question.strip()
+    if not question:
         raise HTTPException(400, "Question is empty")
 
-    hits = retrieve(req.question)
+    cid = req.conversation_id
+    if not cid:
+        cid = create_conversation(question[:60])["id"]
+
+    hits = retrieve(question)
     if not hits:
+        answer = "No documents are indexed yet. Please upload one first."
+        add_message(cid, "user", question)
+        add_message(cid, "assistant", answer)
         return AskResponse(
-            answer="No documents are indexed yet. Please upload one first.",
+            answer=answer,
             sources=[],
             audio_url=None,
+            conversation_id=cid,
+            conversation_title=question[:60] or "New conversation",
         )
 
     passages = [h["text"] for h in hits]
-    text = generate(req.question, passages)
+    text = generate(question, passages)
     audio_name = synthesize(text) if req.speak else ""
+    audio_url = f"/media/{audio_name}" if audio_name else None
+    sources = [{"doc": h["doc"], "score": h["score"]} for h in hits]
+
+    add_message(cid, "user", question)
+    add_message(cid, "assistant", text, sources=sources, audio_url=audio_url)
 
     return AskResponse(
         answer=text,
-        sources=[SourceHit(doc=h["doc"], score=h["score"]) for h in hits],
-        audio_url=f"/media/{audio_name}" if audio_name else None,
+        sources=[SourceHit(**s) for s in sources],
+        audio_url=audio_url,
+        conversation_id=cid,
+        conversation_title=question[:60] or "New conversation",
     )
 
 
