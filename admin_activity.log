@@ -1,0 +1,11 @@
+2026-04-30 20:52:10,919 - ADMIN ACTION: DENIED | Failed admin access attempt
+2026-04-30 20:52:24,717 - ADMIN ACTION: ACCESS | Admin panel opened
+2026-04-30 20:52:24,877 - ADMIN ACTION: VIEW | Viewed knowledge base documents
+2026-04-30 21:47:40,047 - HTTP Request: POST https://router.huggingface.co/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2026-04-30 21:48:24,177 - ADMIN ACTION: ACCESS | Admin panel opened
+2026-04-30 21:48:24,334 - ADMIN ACTION: VIEW | Viewed knowledge base documents
+2026-04-30 21:48:29,961 - ADMIN ACTION: ADD DOC | Uploaded: rl_rich_notes.txt | Chunks: 6
+2026-04-30 21:48:29,966 - ADMIN ACTION: VIEW | Viewed knowledge base documents
+2026-04-30 21:48:49,781 - HTTP Request: POST https://router.huggingface.co/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-30 21:49:28,047 - HTTP Request: POST https://router.huggingface.co/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-30 22:06:38,031 - HTTP Request: POST https://router.huggingface.co/v1/chat/completions "HTTP/1.1 200 OK"

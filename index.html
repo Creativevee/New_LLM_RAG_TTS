@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GVS Chatbot</title>
+    <title>General Visa Services Chatbot</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -171,6 +171,7 @@
             align-items: center;
             gap: 5px;
             margin-top: 3px;
+            transition: color 0.3s;
         }
 
         .status-dot {
@@ -178,6 +179,26 @@
             height: 7px;
             background: #4caf50;
             border-radius: 50%;
+            transition: background 0.3s;
+        }
+        .header-status.online { color: #4caf50; }
+        .header-status.online .status-dot { 
+            background: #4caf50; 
+            box-shadow: 0 0 6px #4caf50;
+        }
+
+        .header-status.offline { color: #f4b8c0; }
+        .header-status.offline .status-dot { background: #e05a6a; }
+
+        .header-status.typing { color: #9b59f7; }
+        .header-status.typing .status-dot { 
+        background: #9b59f7;
+        animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
         }
 
         /* UPLOAD BAR */
@@ -525,16 +546,20 @@
 
         <!-- HEADER -->
         <div class="header">
-            <div class="header-avatar">🤖</div>
+            <div class="header-avatar">
+            <img src="images/GVS.png" alt="Bot Avatar" 
+            style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"
+            onerror="this.style.display='none'; this.parentElement.textContent='🤖'">
+            </div>
             <div class="header-info">
-                <h1>GVS Chat</h1>
-                <div class="header-status">
-                    <span class="status-dot"></span>
-                    Online
-                </div>
+                <h1>General Visa Services Chatbot</h1>
+                <div class="header-status online" id="headerStatus">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Online</span>
+            </div>
             </div>
             <div class="header-actions">
-                <a href="/admin" class="admin-btn">⚙️ Admin</a>
+                <a href="/admin?password=" class="admin-btn" onclick="adminLogin(event)">⚙️ Admin</a>
                 <button id="resetChatBtn" class="reset-chat-btn" onclick="resetChatFlow()">Reset Chat</button>
             </div>
         </div>
@@ -551,7 +576,11 @@
         <!-- CHAT -->
         <div class="chat-box" id="chatBox">
             <div class="msg-row">
-                <div class="avatar bot">🤖</div>
+                <div class="avatar bot">
+                <img src="images/GVS.png" alt="Bot" 
+                style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"
+                onerror="this.style.display='none'; this.parentElement.textContent='🤖'">
+                </div>
                 <div class="bubble bot">Hello! I'm your AI assistant. You can upload a document and ask me about it, or just ask me anything.</div>
             </div>
         </div>
@@ -603,14 +632,17 @@
             if (!file) { addMessage('Please select a file first.', 'bot'); return; }
             uploadBtn.disabled = true;
             uploadBtn.textContent = 'Uploading...';
+            setStatus('typing');
             const formData = new FormData();
             formData.append('file', file);
             try {
                 const res = await fetch('/upload', { method: 'POST', body: formData });
                 const data = await res.json();
                 addMessage(data.message || data.error, 'bot');
+                setStatus('online');
             } catch (err) {
                 addMessage('Upload failed: ' + err.message, 'bot');
+                setStatus('offline');
             } finally {
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = 'Upload';
@@ -623,12 +655,15 @@
             addMessage(question, 'user');
             questionInput.value = '';
             sendBtn.disabled = true;
-
+            setStatus('typing');
             const typingRow = document.createElement('div');
             typingRow.className = 'typing-row';
             typingRow.id = 'typing';
             typingRow.innerHTML = `
-                <div class="avatar bot">🤖</div>
+                <div class="avatar bot">
+                <img src="images/GVS.png" alt="Bot" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"
+                onerror="this.style.display='none'; this.parentElement.textContent='🤖'">
+                </div>
                 <div class="typing-bubble">
                     <div class="dot"></div><div class="dot"></div><div class="dot"></div>
                 </div>`;
@@ -643,11 +678,14 @@
                 const data = await res.json();
                 document.getElementById('typing')?.remove();
                 addMessage(data.text, 'bot', data.audio, data.sources || []);
+                setStatus('online');
             } catch (err) {
                 document.getElementById('typing')?.remove();
                 addMessage('Error: ' + err.message, 'bot');
+                setStatus('offline');
             } finally {
                 sendBtn.disabled = false;
+                questionInput.focus();
             }
         }
 
@@ -657,7 +695,13 @@
 
             const avatarEl = document.createElement('div');
             avatarEl.className = `avatar ${sender}`;
-            avatarEl.textContent = sender === 'bot' ? '🤖' : '👤';
+            if (sender === 'bot') {
+                avatarEl.innerHTML = `<img src="images/GVS.png" alt="Bot" 
+                style="width:100%;height:100%;border-radius:50%;object-fit:cover;"
+                onerror="this.style.display='none'; this.parentElement.textContent='🤖'">`;
+            } else {
+                avatarEl.textContent = '👤';
+            }
 
             const bubble = document.createElement('div');
             bubble.className = `bubble ${sender}`;
@@ -814,7 +858,40 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', loadThreads);
+        
+        function adminLogin(e) {
+            e.preventDefault();
+            const pw = prompt('Enter admin password:');
+            if (pw) window.location.href = `/admin?password=${encodeURIComponent(pw)}`;
+            
+        }
+        // ── Status management ──
+        function setStatus(mode) {
+            const status = document.getElementById('headerStatus');
+            const text = document.getElementById('statusText');
+            status.className = `header-status ${mode}`;
+            if (mode === 'online') text.textContent = 'Online';
+            if (mode === 'offline') text.textContent = 'Offline';
+            if (mode === 'typing') text.textContent = 'Assistant is typing…';
+        }
+
+// ── Check if backend is reachable ──
+        async function checkOnlineStatus() {
+            try {
+                const res = await fetch('/health');
+                if (res.ok) setStatus('online');
+                else setStatus('offline');
+            } catch {
+                setStatus('offline');
+            }
+        }
+
+// Run on load and every 30 seconds
+        document.addEventListener('DOMContentLoaded', () => {
+            checkOnlineStatus();
+            setInterval(checkOnlineStatus, 30000);
+            loadThreads();
+            });
     </script>
 </body>
 </html>
