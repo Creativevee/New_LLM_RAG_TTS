@@ -1,13 +1,13 @@
 # main.py - FastAPI Backend (FINAL FIXED VERSION)
-from fastapi import FastAPI, UploadFile, File, Form, Request
-from fastapi.responses import StreamingResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.responses import HTMLResponse
 from uuid import uuid4
 
 # ✅ Import everything needed from rag.py
 from rag import (
     index_document,
     search_context,
+    get_all_context,
     get_answer,
     text_to_speech,
     validate_file,
@@ -18,10 +18,19 @@ from rag import (
     create_thread,
     get_thread_list,
     reset_thread_messages,
+    get_kb_documents,
+    remove_document_from_kb,
 )
-from io import BytesIO
 import os
+import re
 import base64
+
+# Matches questions that want a complete list (members, skills, items, etc.)
+_LIST_QUERY_RE = re.compile(
+    r'\b(list|all|every|who are|give me|show me|what are)\b.{0,60}'
+    r'\b(member|team|people|staff|employee|everyone|developer|engineer|name)\b',
+    re.IGNORECASE
+)
 
 app = FastAPI()
 
@@ -47,7 +56,7 @@ async def upload_file(file: UploadFile = File(...)):
     chunks, time_taken, metadata = index_document(content, file.filename)
 
     return {
-        "message": f"✅ Indexed chunks in {time_taken:.2f}s",
+        "message": f"✅ Indexed {chunks} chunks in {time_taken:.2f}s",
         "metadata": {
             "pages": metadata.get("pages", 0),
             "characters": metadata.get("char_count", 0),
@@ -64,9 +73,11 @@ async def chat(question: str = Form(...), session_id: str = Form(...)):
         f"{item['role'].upper()}: {item['text']}"
         for item in history_items
     ])
-    sources = []
-    #answering based on context
-    context, sources = search_context(question)
+    # For "list all" style questions fetch every chunk so nothing is missed
+    if _LIST_QUERY_RE.search(question):
+        context, sources = get_all_context()
+    else:
+        context, sources = search_context(question)
     if not context:
         context = "No relevant document context found."
     answer = get_answer(question, context, history=history_text)
@@ -93,18 +104,10 @@ async def threads():
 
 @app.get("/thread/{session_id}")
 async def get_thread_messages(session_id: str):
-    results = chat_collection.get(
-        where={"session_id": session_id}
-    )
     try:
-        print("=== DEBUG: fetching thread ===")
-        print("session_id:", session_id)
         results = chat_collection.get(where={"session_id": session_id})
-        print("results keys:", results.keys())
-        print("results count:", len(results["documents"]) if results["documents"] else 0)
-        print("sample metadata:", results["metadatas"][0] if results["metadatas"] else "<empty>")
     except Exception as e:
-        print("Error:", e)
+        print("Error fetching thread:", e)
         return {"messages": []}
     if not results or not results["documents"]:
         return {"messages": []}
@@ -120,6 +123,33 @@ async def get_thread_messages(session_id: str):
 async def reset_thread(session_id: str):
     deleted_count = reset_thread_messages(session_id)
     return {"message": "Chat reset successfully.", "deleted_messages": deleted_count}
+
+# Admin page
+@app.get("/admin", response_class=HTMLResponse)
+async def get_admin():
+    with open("admin.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/admin/docs")
+async def list_admin_docs():
+    return {"documents": get_kb_documents()}
+
+@app.post("/admin/docs/add")
+async def add_admin_doc(file: UploadFile = File(...)):
+    if not validate_file(file.filename):
+        return {"error": f"Unsupported file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"}
+    content = await file.read()
+    chunks, time_taken, metadata = index_document(content, file.filename)
+    return {
+        "message": f"✅ Indexed {chunks} chunks in {time_taken:.2f}s",
+        "chunks": chunks,
+        "source": file.filename,
+    }
+
+@app.post("/admin/docs/remove")
+async def remove_admin_doc(source: str = Form(...)):
+    count = remove_document_from_kb(source)
+    return {"message": f"Removed {count} chunk(s) for '{source}'.", "count": count}
 
 # Health check
 @app.get("/health")
