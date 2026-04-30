@@ -128,6 +128,24 @@
 
         .reset-chat-btn:hover { opacity: 0.85; }
 
+        .admin-btn {
+            padding: 8px 12px;
+            background: #1a1d28;
+            color: #9094ad;
+            border: 1px solid #2a2e40;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .admin-btn:hover { background: #1e2235; color: #c0c4d8; }
+
         .header-avatar {
             width: 40px;
             height: 40px;
@@ -516,6 +534,7 @@
                 </div>
             </div>
             <div class="header-actions">
+                <a href="/admin" class="admin-btn">⚙️ Admin</a>
                 <button id="resetChatBtn" class="reset-chat-btn" onclick="resetChatFlow()">Reset Chat</button>
             </div>
         </div>
@@ -653,20 +672,19 @@
             }
 
             if (sender === 'bot' && Array.isArray(sources) && sources.length) {
+                const unique = [...new Set(sources.map(s => s.source || 'uploaded_document'))];
                 const sourcesBlock = document.createElement('div');
                 sourcesBlock.className = 'sources';
 
                 const title = document.createElement('div');
                 title.className = 'sources-title';
-                title.textContent = 'Sources';
+                title.textContent = 'Source';
                 sourcesBlock.appendChild(title);
 
-                sources.forEach((src) => {
+                unique.forEach((name) => {
                     const item = document.createElement('div');
                     item.className = 'source-item';
-                    const sourceName = src.source || 'uploaded_document';
-                    const preview = src.preview || '';
-                    item.innerHTML = `<strong>${sourceName}</strong> (chunk ${src.chunk_index}): ${preview.replace(/\n/g, '<br>')}`;
+                    item.innerHTML = `<strong>${name}</strong>`;
                     sourcesBlock.appendChild(item);
                 });
 

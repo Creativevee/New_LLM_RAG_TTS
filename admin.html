@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — Document Manager</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: #0d0d0d;
+            color: #d0d3e8;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ─── HEADER ─── */
+        .header {
+            padding: 14px 28px;
+            background: #13161d;
+            border-bottom: 1px solid #1a1d28;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-shrink: 0;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 13px;
+            background: #1a1d28;
+            color: #8a8ea8;
+            border: 1px solid #22263a;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .back-btn:hover { background: #1e2235; color: #c0c4d8; }
+
+        .header-title {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-title h1 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #e8eaf0;
+        }
+
+        .header-title span {
+            font-size: 12px;
+            color: #4a4e65;
+            margin-top: 2px;
+        }
+
+        /* ─── CONTENT ─── */
+        .content {
+            flex: 1;
+            padding: 28px;
+            max-width: 860px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ─── CARD ─── */
+        .card {
+            background: #111318;
+            border: 1px solid #1a1d28;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #1a1d28;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .card-header h2 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e0e2f0;
+        }
+
+        .card-header p {
+            font-size: 12px;
+            color: #4a4e65;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .badge {
+            padding: 3px 10px;
+            background: #1a1d28;
+            border: 1px solid #2a2e40;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #7a7e95;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* ─── UPLOAD ROW ─── */
+        .upload-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .hint-text {
+            font-size: 12px;
+            color: #4a4e65;
+            line-height: 1.5;
+            margin-bottom: 14px;
+        }
+
+        #adminFileInput { display: none; }
+
+        .file-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 16px;
+            background: #1a1d28;
+            color: #8a8ea8;
+            border: 1px solid #22263a;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .file-btn:hover { background: #1e2235; }
+
+        #adminFileName {
+            font-size: 13px;
+            color: #5a5e75;
+            flex: 1;
+            min-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            padding: 9px 18px;
+            background: linear-gradient(135deg, #4f6ef7, #9b59f7);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-primary:hover { opacity: 0.85; }
+        .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ─── TABLE ─── */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .docs-table thead tr {
+            border-bottom: 1px solid #1a1d28;
+        }
+
+        .docs-table th {
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            color: #4a4e65;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .docs-table td {
+            padding: 12px 14px;
+            color: #b0b4c8;
+            border-bottom: 1px solid #1a1d2840;
+            vertical-align: middle;
+        }
+
+        .docs-table tbody tr:last-child td { border-bottom: none; }
+
+        .docs-table tbody tr:hover td { background: #13161d; }
+
+        .doc-name {
+            font-weight: 500;
+            color: #d8daf0;
+            max-width: 340px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #1a1d28;
+            border: 1px solid #2a2e40;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #7a7e95;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .chunks-count {
+            font-variant-numeric: tabular-nums;
+            color: #8a8ea8;
+        }
+
+        .btn-remove {
+            padding: 6px 12px;
+            background: #2a1318;
+            color: #f4b8c0;
+            border: 1px solid #5a222d;
+            border-radius: 7px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-remove:hover { opacity: 0.8; }
+        .btn-remove:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ─── EMPTY STATE ─── */
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: #3e4258;
+            font-size: 13px;
+        }
+
+        .empty-state svg {
+            width: 36px;
+            height: 36px;
+            margin: 0 auto 12px;
+            display: block;
+            opacity: 0.3;
+        }
+
+        /* ─── LOADING ROW ─── */
+        .loading-row td {
+            color: #3e4258;
+            font-style: italic;
+            text-align: center;
+            padding: 28px;
+        }
+
+        /* ─── TOAST ─── */
+        .toast {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #e8eaf0;
+            background: #1a1d28;
+            border: 1px solid #2a2e40;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            opacity: 0;
+            transform: translateY(8px);
+            pointer-events: none;
+            transition: opacity 0.18s, transform 0.18s;
+            z-index: 9999;
+        }
+
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { background: #112319; border-color: #23663a; color: #c5f3d3; }
+        .toast.error   { background: #281218; border-color: #6b2430; color: #f4c0c7; }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+        <a href="/" class="back-btn">← Chat</a>
+        <div class="header-title">
+            <h1>⚙️ Admin Panel</h1>
+            <span>RAG Knowledge Base Manager</span>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="content">
+
+        <!-- ADD DOCUMENT CARD -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h2>Add / Replace Document</h2>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="hint-text">
+                    Upload a document to add it to the knowledge base. If a document with the same filename is
+                    already indexed, its chunks will be replaced with the new content. Supported formats:
+                    PDF, TXT, DOCX, CSV, JSON, MD.
+                </p>
+                <div class="upload-row">
+                    <label class="file-btn" for="adminFileInput">📁 Choose File</label>
+                    <input type="file" id="adminFileInput"
+                           accept=".pdf,.txt,.docx,.csv,.json,.md"
+                           onchange="updateAdminFileName()">
+                    <span id="adminFileName">No file chosen</span>
+                    <button class="btn-primary" id="addBtn" onclick="adminUpload()">
+                        Add to Knowledge Base
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- INDEXED DOCUMENTS CARD -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Indexed Documents</h2>
+                <span class="badge" id="docCountBadge">Loading…</span>
+            </div>
+            <table class="docs-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Document</th>
+                        <th>Type</th>
+                        <th>Chunks</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="docsBody">
+                    <tr class="loading-row">
+                        <td colspan="5">Loading indexed documents…</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast"></div>
+
+    <script>
+        let toastTimer = null;
+        const toast = document.getElementById('toast');
+        const addBtn = document.getElementById('addBtn');
+
+        function showToast(message, type = 'success') {
+            toast.classList.remove('success', 'error', 'show');
+            toast.textContent = message;
+            toast.classList.add(type);
+            requestAnimationFrame(() => toast.classList.add('show'));
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+        }
+
+        function updateAdminFileName() {
+            const file = document.getElementById('adminFileInput').files[0];
+            document.getElementById('adminFileName').textContent = file ? file.name : 'No file chosen';
+        }
+
+        async function loadDocs() {
+            try {
+                const res = await fetch('/admin/docs');
+                const data = await res.json();
+                renderDocs(data.documents || []);
+            } catch (err) {
+                document.getElementById('docsBody').innerHTML =
+                    `<tr class="loading-row"><td colspan="5">Failed to load documents.</td></tr>`;
+                document.getElementById('docCountBadge').textContent = 'Error';
+            }
+        }
+
+        function renderDocs(docs) {
+            const badge = document.getElementById('docCountBadge');
+            const tbody = document.getElementById('docsBody');
+
+            badge.textContent = `${docs.length} doc${docs.length !== 1 ? 's' : ''}`;
+
+            if (!docs.length) {
+                tbody.innerHTML = `
+                    <tr><td colspan="5">
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5
+                                         7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0
+                                         12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621
+                                         0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125
+                                         1.125 1.125h12.75c.621 0 1.125-.504
+                                         1.125-1.125V11.25a9 9 0 00-9-9z"/>
+                            </svg>
+                            No documents indexed yet. Upload a file above to get started.
+                        </div>
+                    </td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = docs.map((doc, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td><span class="doc-name" title="${esc(doc.source)}">${esc(doc.source)}</span></td>
+                    <td><span class="type-badge">${esc((doc.type || '').replace('.', ''))}</span></td>
+                    <td><span class="chunks-count">${doc.chunks}</span></td>
+                    <td>
+                        <button class="btn-remove" onclick="removeDoc('${esc(doc.source)}', this)">
+                            Remove
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function esc(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        async function adminUpload() {
+            const file = document.getElementById('adminFileInput').files[0];
+            if (!file) { showToast('Please choose a file first.', 'error'); return; }
+
+            addBtn.disabled = true;
+            addBtn.textContent = 'Indexing…';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch('/admin/docs/add', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.error) {
+                    showToast(data.error, 'error');
+                } else {
+                    showToast(data.message, 'success');
+                    document.getElementById('adminFileName').textContent = 'No file chosen';
+                    document.getElementById('adminFileInput').value = '';
+                    await loadDocs();
+                }
+            } catch (err) {
+                showToast('Upload failed: ' + err.message, 'error');
+            } finally {
+                addBtn.disabled = false;
+                addBtn.textContent = 'Add to Knowledge Base';
+            }
+        }
+
+        async function removeDoc(source, btn) {
+            if (!confirm(`Remove all chunks for "${source}"?\nThis cannot be undone.`)) return;
+
+            btn.disabled = true;
+            btn.textContent = 'Removing…';
+
+            const formData = new FormData();
+            formData.append('source', source);
+
+            try {
+                const res = await fetch('/admin/docs/remove', { method: 'POST', body: formData });
+                const data = await res.json();
+                showToast(data.message, 'success');
+                await loadDocs();
+            } catch (err) {
+                showToast('Failed to remove document.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Remove';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadDocs);
+    </script>
+</body>
+</html>
