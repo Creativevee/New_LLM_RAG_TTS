@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -648,15 +648,6 @@
             </div>
         </div>
 
-        <!-- UPLOAD BAR -->
-        <div class="upload-bar">
-            <span class="upload-label">📎 Document:</span>
-            <label class="file-btn" for="fileInput">📁 Choose File</label>
-            <input type="file" id="fileInput" accept=".pdf,.txt,.docx,.csv,.json,.md" onchange="updateFileName()">
-            <span id="fileName">No file chosen</span>
-            <button class="upload-btn" id="uploadBtn" onclick="uploadFile()">Upload</button>
-        </div>
-
         <!-- CHAT -->
         <div class="chat-box" id="chatBox">
             <div class="msg-row">
@@ -721,6 +712,9 @@
         let speechRetryCount = 0;
         let recognitionAutoStopTimer = null;
         let recordingSeconds = 0;
+        let micPermissionGranted = false;
+        let micPermissionBlocked = false;
+        let ignoreNextOnEndToast = false;
         let recordingInterval = null;
 
         let selected_session_id = 'default';
@@ -950,6 +944,48 @@
             }, 2400);
         }
 
+        async function ensureMicrophoneAccess() {
+            if (micPermissionBlocked) {
+                showToast('Microphone permission denied. Enable mic access in your browser and retry.', 'error');
+                return false;
+            }
+
+            if (!window.isSecureContext) {
+                showToast('Voice input requires HTTPS or localhost.', 'error');
+                return false;
+            }
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showToast('Microphone API not available in this browser.', 'error');
+                return false;
+            }
+
+            if (micPermissionGranted) {
+                return true;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+                micPermissionGranted = true;
+                micPermissionBlocked = false;
+                return true;
+            } catch (err) {
+                const errorName = err?.name || 'UnknownError';
+                if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
+                    micPermissionBlocked = true;
+                    showToast('Microphone permission denied. Allow access in Edge/Chrome site settings.', 'error');
+                } else if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
+                    showToast('No microphone found. Connect/select an input device and retry.', 'error');
+                } else if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
+                    showToast('Microphone is busy in another app. Close it and try again.', 'error');
+                } else {
+                    showToast(`Could not access microphone (${errorName}).`, 'error');
+                }
+                return false;
+            }
+        }
+
         function setupSpeechRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
@@ -958,7 +994,7 @@
             }
 
             speechRecognition = new SpeechRecognition();
-            speechRecognition.lang = (navigator.language || 'en-US').startsWith('es') ? 'es-ES' : 'en-US';
+            speechRecognition.lang = 'en-US';
             speechRecognition.continuous = true;
             speechRecognition.interimResults = true;
             speechRecognition.maxAlternatives = 1;
@@ -979,6 +1015,10 @@
                 if (recognitionAutoStopTimer) {
                     clearTimeout(recognitionAutoStopTimer);
                     recognitionAutoStopTimer = null;
+                }
+                if (ignoreNextOnEndToast) {
+                    ignoreNextOnEndToast = false;
+                    return;
                 }
                 if (!hasSpeechResult) {
                     showToast('No speech detected. Try again and speak clearly.', 'error');
@@ -1012,23 +1052,37 @@
                     'aborted': 'Voice input cancelled.'
                 };
 
-                const msg = errorMessages[errorType] || `Voice input failed (${errorType}).`;
+                if (errorType === 'not-allowed' || errorType === 'service-not-allowed') {
+                    micPermissionBlocked = true;
+                    micPermissionGranted = false;
+                }
+
+                const baseMsg = errorMessages[errorType] || 'Voice input failed.';
+                const msg = `${baseMsg} [code: ${errorType}]`;
                 showToast(msg, 'error');
             };
         }
 
-        function toggleVoiceInput() {
+        async function toggleVoiceInput() {
             if (!speechRecognition) {
                 showToast('Voice input is not supported in this browser.', 'error');
                 return;
             }
             if (isRecording) {
+                ignoreNextOnEndToast = true;
                 speechRecognition.stop();
                 return;
             }
+
+            const micReady = await ensureMicrophoneAccess();
+            if (!micReady) {
+                return;
+            }
+
             hasSpeechResult = false;
             speechRetryCount = 0;
             isRecording = true;
+            ignoreNextOnEndToast = false;
             micBtn?.classList.add('recording');
             startRecordingTimer();
             try {
@@ -1152,3 +1206,5 @@
     </script>
 </body>
 </html>
+
+
