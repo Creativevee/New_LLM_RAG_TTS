@@ -435,6 +435,50 @@
         .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .send-btn svg { width: 20px; height: 20px; }
 
+        .mic-btn {
+            width: 46px;
+            height: 46px;
+            background: #1a1d28;
+            border: 1px solid #2a2e40;
+            border-radius: 12px;
+            color: #cfd3ea;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, border-color 0.2s, color 0.2s, opacity 0.2s;
+            flex-shrink: 0;
+        }
+
+        .mic-btn:hover { background: #202434; }
+        .mic-btn.recording {
+            background: #5a222d;
+            border-color: #7a2c3a;
+            color: #ffd9de;
+        }
+        .mic-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .mic-btn svg { width: 19px; height: 19px; }
+
+        .recording-timer {
+            min-width: 52px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: #ff9aa8;
+            background: #2a1318;
+            border: 1px solid #5a222d;
+            border-radius: 10px;
+            padding: 6px 8px;
+            display: none;
+        }
+
+        .recording-timer.show {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .toast {
             position: fixed;
             right: 20px;
@@ -589,6 +633,16 @@
         <div class="input-area">
             <input type="text" id="questionInput" placeholder="Type a message..."
                    onkeypress="if(event.key==='Enter')askQuestion()">
+            <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Voice input">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 11a7 7 0 0 1-14 0"></path>
+                    <line x1="12" y1="18" x2="12" y2="22"></line>
+                    <line x1="8" y1="22" x2="16" y2="22"></line>
+                </svg>
+            </button>
+            <span id="recordingTimer" class="recording-timer">00:00</span>
             <button class="send-btn" id="sendBtn" onclick="askQuestion()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                      stroke-linecap="round" stroke-linejoin="round">
@@ -616,9 +670,18 @@
         const questionInput = document.getElementById('questionInput');
         const sendBtn = document.getElementById('sendBtn');
         const uploadBtn = document.getElementById('uploadBtn');
+        const micBtn = document.getElementById('micBtn');
+        const recordingTimerEl = document.getElementById('recordingTimer');
         const toast = document.getElementById('toast');
         const confirmOverlay = document.getElementById('confirmOverlay');
         let toastTimer = null;
+        let speechRecognition = null;
+        let isRecording = false;
+        let hasSpeechResult = false;
+        let speechRetryCount = 0;
+        let recognitionAutoStopTimer = null;
+        let recordingSeconds = 0;
+        let recordingInterval = null;
 
         let selected_session_id = 'default';
 
@@ -822,6 +885,135 @@
             }, 2400);
         }
 
+        function setupSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                if (micBtn) micBtn.disabled = true;
+                return;
+            }
+
+            speechRecognition = new SpeechRecognition();
+            speechRecognition.lang = (navigator.language || 'en-US').startsWith('es') ? 'es-ES' : 'en-US';
+            speechRecognition.continuous = true;
+            speechRecognition.interimResults = true;
+            speechRecognition.maxAlternatives = 1;
+
+            speechRecognition.onresult = (event) => {
+                hasSpeechResult = true;
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                questionInput.value = transcript.trim();
+            };
+
+            speechRecognition.onend = () => {
+                isRecording = false;
+                micBtn?.classList.remove('recording');
+                stopRecordingTimer();
+                if (recognitionAutoStopTimer) {
+                    clearTimeout(recognitionAutoStopTimer);
+                    recognitionAutoStopTimer = null;
+                }
+                if (!hasSpeechResult) {
+                    showToast('No speech detected. Try again and speak clearly.', 'error');
+                }
+            };
+
+            speechRecognition.onerror = (event) => {
+                isRecording = false;
+                micBtn?.classList.remove('recording');
+                stopRecordingTimer();
+
+                const errorType = event?.error || 'unknown';
+
+                if (errorType === 'no-speech' && speechRetryCount < 1) {
+                    speechRetryCount += 1;
+                    showToast('No speech detected. Listening again...', 'error');
+                    try {
+                        speechRecognition.start();
+                        return;
+                    } catch (_) {
+                        // If restart fails, fall through to normal error handling.
+                    }
+                }
+
+                const errorMessages = {
+                    'not-allowed': 'Microphone permission denied. Allow mic access in browser settings.',
+                    'service-not-allowed': 'Speech service is blocked in this browser/profile.',
+                    'no-speech': 'No speech detected. Please try again.',
+                    'audio-capture': 'No microphone detected. Check your input device.',
+                    'network': 'Speech recognition network error. Check internet and retry.',
+                    'aborted': 'Voice input cancelled.'
+                };
+
+                const msg = errorMessages[errorType] || `Voice input failed (${errorType}).`;
+                showToast(msg, 'error');
+            };
+        }
+
+        function toggleVoiceInput() {
+            if (!speechRecognition) {
+                showToast('Voice input is not supported in this browser.', 'error');
+                return;
+            }
+            if (isRecording) {
+                speechRecognition.stop();
+                return;
+            }
+            hasSpeechResult = false;
+            speechRetryCount = 0;
+            isRecording = true;
+            micBtn?.classList.add('recording');
+            startRecordingTimer();
+            try {
+                speechRecognition.start();
+                if (recognitionAutoStopTimer) clearTimeout(recognitionAutoStopTimer);
+                recognitionAutoStopTimer = setTimeout(() => {
+                    if (isRecording) {
+                        speechRecognition.stop();
+                    }
+                }, 10000);
+            } catch (err) {
+                isRecording = false;
+                micBtn?.classList.remove('recording');
+                stopRecordingTimer();
+                showToast('Could not start voice input. Try Chrome or Edge.', 'error');
+            }
+        }
+
+        function formatRecordingTime(seconds) {
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            return `${mins}:${secs}`;
+        }
+
+        function startRecordingTimer() {
+            recordingSeconds = 0;
+            if (recordingTimerEl) {
+                recordingTimerEl.textContent = '00:00';
+                recordingTimerEl.classList.add('show');
+            }
+            if (recordingInterval) clearInterval(recordingInterval);
+            recordingInterval = setInterval(() => {
+                recordingSeconds += 1;
+                if (recordingTimerEl) {
+                    recordingTimerEl.textContent = formatRecordingTime(recordingSeconds);
+                }
+            }, 1000);
+        }
+
+        function stopRecordingTimer() {
+            if (recordingInterval) {
+                clearInterval(recordingInterval);
+                recordingInterval = null;
+            }
+            if (recordingTimerEl) {
+                recordingTimerEl.classList.remove('show');
+                recordingTimerEl.textContent = '00:00';
+            }
+        }
+
         async function resetChatFlow() {
             if (!selected_session_id) {
                 addMessage('Please select or create a conversation first.', 'bot');
@@ -858,7 +1050,6 @@
             }
         }
 
-        
         function adminLogin(e) {
             e.preventDefault();
             const pw = prompt('Enter admin password:');
@@ -891,7 +1082,8 @@
             checkOnlineStatus();
             setInterval(checkOnlineStatus, 30000);
             loadThreads();
-            });
+            setupSpeechRecognition();
+        });
     </script>
 </body>
 </html>
