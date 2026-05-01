@@ -369,6 +369,11 @@
     <div id="toast" class="toast"></div>
 
     <script>
+        // At the top of your admin script, grab the password from the URL
+const adminPassword = new URLSearchParams(window.location.search).get('password') || '';
+
+
+
         let toastTimer = null;
         const toast = document.getElementById('toast');
         const addBtn = document.getElementById('addBtn');
@@ -389,7 +394,9 @@
 
         async function loadDocs() {
             try {
-                const res = await fetch('/admin/docs');
+                const res = await fetch('/admin/docs', {
+                headers: { 'X-Admin-Password': adminPassword }
+                });
                 const data = await res.json();
                 renderDocs(data.documents || []);
             } catch (err) {
@@ -459,7 +466,7 @@
             formData.append('file', file);
 
             try {
-                const res = await fetch('/admin/docs/add', { method: 'POST', body: formData });
+                const res = await fetch('/admin/docs/add', { method: 'POST',headers: { 'X-Admin-Password': adminPassword }, body: formData });
                 const data = await res.json();
                 if (data.error) {
                     showToast(data.error, 'error');
@@ -487,7 +494,9 @@
             formData.append('source', source);
 
             try {
-                const res = await fetch('/admin/docs/remove', { method: 'POST', body: formData });
+                const res = await fetch('/admin/docs/remove', { method: 'POST',
+                    headers: { 'X-Admin-Password': adminPassword },
+                    body: formData });
                 const data = await res.json();
                 showToast(data.message, 'success');
                 await loadDocs();
