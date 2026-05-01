@@ -360,10 +360,50 @@
         /* AUDIO */
         audio {
             width: 100%;
-            margin-top: 10px;
             height: 32px;
             border-radius: 8px;
             filter: invert(1) hue-rotate(180deg) brightness(0.85);
+        }
+
+        .audio-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .audio-row audio {
+            flex: 1;
+            margin-top: 0;
+        }
+
+        .audio-actions {
+            display: flex;
+            align-items: center;
+        }
+
+        .download-audio-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border-radius: 8px;
+            border: 1px solid #2b3150;
+            background: #161b2b;
+            color: #cdd6ff;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        .download-audio-btn:hover {
+            opacity: 0.85;
+        }
+
+        .download-audio-btn svg {
+            width: 15px;
+            height: 15px;
         }
 
         .sources {
@@ -771,10 +811,35 @@
             bubble.innerHTML = text.replace(/\n/g, '<br>');
 
             if (audioUrl && sender === 'bot') {
+                const audioRow = document.createElement('div');
+                audioRow.className = 'audio-row';
+
                 const audio = document.createElement('audio');
                 audio.controls = true;
                 audio.src = audioUrl;
-                bubble.appendChild(audio);
+                audioRow.appendChild(audio);
+
+                const audioActions = document.createElement('div');
+                audioActions.className = 'audio-actions';
+
+                const downloadLink = document.createElement('a');
+                downloadLink.className = 'download-audio-btn';
+                downloadLink.href = audioUrl;
+                downloadLink.download = `chatbot-response-${Date.now()}.mp3`;
+                downloadLink.title = 'Download audio';
+                downloadLink.setAttribute('aria-label', 'Download audio');
+                downloadLink.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                `;
+                audioActions.appendChild(downloadLink);
+                audioRow.appendChild(audioActions);
+                bubble.appendChild(audioRow);
+
                 setTimeout(() => audio.play().catch(() => {}), 100);
             }
 
