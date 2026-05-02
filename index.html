@@ -703,7 +703,7 @@
         const chatBox = document.getElementById('chatBox');
         const questionInput = document.getElementById('questionInput');
         const sendBtn = document.getElementById('sendBtn');
-        const uploadBtn = document.getElementById('uploadBtn');
+        
         const micBtn = document.getElementById('micBtn');
         const recordingTimerEl = document.getElementById('recordingTimer');
         const toast = document.getElementById('toast');
@@ -719,32 +719,8 @@
 
         let selected_session_id = 'default';
 
-        function updateFileName() {
-            const file = document.getElementById('fileInput').files[0];
-            document.getElementById('fileName').textContent = file ? file.name : 'No file chosen';
-        }
-
-        async function uploadFile() {
-            const file = document.getElementById('fileInput').files[0];
-            if (!file) { addMessage('Please select a file first.', 'bot'); return; }
-            uploadBtn.disabled = true;
-            uploadBtn.textContent = 'Uploading...';
-            setStatus('typing');
-            const formData = new FormData();
-            formData.append('file', file);
-            try {
-                const res = await fetch('/upload', { method: 'POST', body: formData });
-                const data = await res.json();
-                addMessage(data.message || data.error, 'bot');
-                setStatus('online');
-            } catch (err) {
-                addMessage('Upload failed: ' + err.message, 'bot');
-                setStatus('offline');
-            } finally {
-                uploadBtn.disabled = false;
-                uploadBtn.textContent = 'Upload';
-            }
-        }
+       
+      
 
         async function askQuestion() {
             const question = questionInput.value.trim();
@@ -946,10 +922,20 @@
 
         function setupSpeechRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            // ✅ NEW
             if (!SpeechRecognition) {
-                if (micBtn) micBtn.disabled = true;
-                return;
-            }
+                if (micBtn) {
+                    micBtn.disabled = true;
+                    micBtn.title = 'Voice input requires Chrome or Edge';
+                    micBtn.style.opacity = '0.3';
+                    micBtn.style.cursor = 'not-allowed';
+                    micBtn.onclick = () => showToast(
+                        '🎤 Voice input requires Chrome or Edge browser.', 
+                        'error'
+                    );
+                }
+            return;
+        }
 
             speechRecognition = new SpeechRecognition();
             speechRecognition.lang = (navigator.language || 'en-US').startsWith('es') ? 'es-ES' : 'en-US';
