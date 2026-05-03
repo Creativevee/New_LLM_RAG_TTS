@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-multipart
+huggingface_hub
+chromadb
+pypdf
+edge-tts
+aiofiles
+jinja2
+python-docx

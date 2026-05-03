@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Document Q&A — Rakesh build
 
 A focused take on the LLM_TTS_Project: upload a document, ask questions about it,
@@ -86,6 +87,8 @@ export LLM_MODEL="Qwen/Qwen2.5-1.5B-Instruct"   # bigger, better, slower
 
 Defaults to `Qwen/Qwen2.5-0.5B-Instruct` for fast CPU inference.
 =======
+=======
+>>>>>>> origin/master
 # Hexagon Labs Chatbot
 
 A RAG-powered AI chatbot with Text-to-Speech. Upload a document and ask questions about it, or just chat with the AI directly.
@@ -144,4 +147,7 @@ Open your browser at: [http://localhost:7860](http://localhost:7860)
 - Type any question in the chat box and press Enter or click Send
 - To use a document: click **Choose File**, select a file, click **Upload**, then ask questions about it
 - The bot will read back answers using voice automatically
+<<<<<<< HEAD
 >>>>>>> db6d43d67722afa8e94bcc962c65ee4199c1f21d
+=======
+>>>>>>> origin/master
