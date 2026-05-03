@@ -616,9 +616,11 @@
         const questionInput = document.getElementById('questionInput');
         const sendBtn = document.getElementById('sendBtn');
         const uploadBtn = document.getElementById('uploadBtn');
+
         const toast = document.getElementById('toast');
         const confirmOverlay = document.getElementById('confirmOverlay');
         let toastTimer = null;
+
 
         let selected_session_id = 'default';
 
@@ -772,6 +774,7 @@
 
         async function selectThread(session_id, title = 'Untitled') {
             selected_session_id = session_id;
+            localStorage.setItem('selected_session_id', selected_session_id);
             updateActiveThread();
             document.getElementById('chatBox').innerHTML = '';
             addMessage(`Loaded conversation: <strong>${title}</strong>`, 'bot');
@@ -892,6 +895,18 @@
             setInterval(checkOnlineStatus, 30000);
             loadThreads();
             });
+
+        window.addEventListener('load', async () => {
+    // restore session
+    selected_session_id = localStorage.getItem('selected_session_id') || selected_session_id || 'default';
+
+    // load threads list
+    await loadThreads();
+    await selectThread(selected_session_id);
+
+    // load messages for selected session
+    
+});
     </script>
 </body>
 </html>
