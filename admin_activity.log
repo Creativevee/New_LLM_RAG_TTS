@@ -9,3 +9,5 @@
 2026-04-30 21:48:49,781 - HTTP Request: POST https://router.huggingface.co/v1/chat/completions "HTTP/1.1 200 OK"
 2026-04-30 21:49:28,047 - HTTP Request: POST https://router.huggingface.co/v1/chat/completions "HTTP/1.1 200 OK"
 2026-04-30 22:06:38,031 - HTTP Request: POST https://router.huggingface.co/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-06 20:27:46,661 - ADMIN ACTION: ACCESS | Admin panel opened
+2026-05-06 20:27:46,706 - ADMIN ACTION: VIEW | Viewed knowledge base documents
