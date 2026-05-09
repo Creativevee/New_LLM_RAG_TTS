@@ -1,5 +1,42 @@
+<<<<<<< HEAD
+<<<<<<< HEAD
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# Secrets
+.env
+*.env
+
+# Project runtime data
+uploads/
+audio/
+vectors/
+data/
+outputs/
+qwen_tts_env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+=======
+=======
+>>>>>>> origin/master
 venv/
 chroma_db/
 __pycache__/
 *.pyc
 .env
+<<<<<<< HEAD
+>>>>>>> db6d43d67722afa8e94bcc962c65ee4199c1f21d
+=======
+>>>>>>> origin/master
